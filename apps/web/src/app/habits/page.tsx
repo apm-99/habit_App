@@ -4,53 +4,61 @@ import { useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
-import { useHabits, useCreateHabit } from '@/hooks/useHabits';
+import { useHabits, useCreateHabit, useDeleteHabit } from '@/hooks/useHabits';
 import { Plus } from 'lucide-react';
-import type { CreateHabitInput } from '@repo/db';
+import type { CreateHabitInput, Habit } from '@repo/db';
 
 export default function HabitsPage() {
   const [showForm, setShowForm] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | undefined>(undefined);
   const { data: habits, isLoading } = useHabits();
   const createHabit = useCreateHabit();
+  const deleteHabit = useDeleteHabit();
 
-  const handleCreate = (input: CreateHabitInput) => {
-    createHabit.mutate(input);
+  const handleCreate = async (input: CreateHabitInput) => {
+    await createHabit.mutateAsync(input);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteHabit.mutateAsync(id);
   };
 
   return (
     <AppShell>
-      <div className="px-6 pt-10 pb-24">
+      <div className="px-5 pt-14 pb-24">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-semibold text-text-primary">Habits</h1>
-            <p className="text-sm text-text-secondary mt-1">Manage your habits</p>
-          </div>
+          <h1 className="text-[36px] font-[500] tracking-[-0.02em] text-text-primary leading-tight">Habits</h1>
           <button
-            onClick={() => setShowForm(true)}
-            className="w-10 h-10 rounded-full bg-accent flex items-center justify-center active:scale-90 transition-transform"
+            onClick={() => { setEditingHabit(undefined); setShowForm(true); }}
+            className="w-[34px] h-[34px] rounded-full bg-accent flex items-center justify-center active:opacity-70 transition-opacity shadow-sm"
           >
-            <Plus size={20} className="text-white" />
+            <Plus size={18} className="text-white" />
           </button>
         </div>
 
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-[10px]">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 card animate-pulse bg-elevated/50" />
+              <div key={i} className="h-[52px] rounded-[10px] bg-card animate-pulse" />
             ))}
           </div>
         ) : habits && habits.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-[1px]">
             {habits.map((habit) => (
-              <HabitCard key={habit.id} habit={habit} />
+              <HabitCard
+                key={habit.id}
+                habit={habit}
+                onClick={() => { setEditingHabit(habit); setShowForm(true); }}
+                onDelete={() => handleDelete(habit.id)}
+              />
             ))}
           </div>
         ) : (
           <div className="text-center pt-20">
-            <p className="text-text-secondary text-sm">No habits yet</p>
+            <h2 className="text-[22px] font-[400] tracking-[-0.01em] text-text-primary">No habits yet</h2>
             <button
               onClick={() => setShowForm(true)}
-              className="mt-4 text-accent text-sm font-medium"
+              className="mt-4 text-accent text-[15px] font-semibold active:opacity-70 transition-opacity"
             >
               Create your first habit
             </button>
@@ -58,7 +66,14 @@ export default function HabitsPage() {
         )}
       </div>
 
-      <HabitForm open={showForm} onClose={() => setShowForm(false)} onSubmit={handleCreate} />
+      <HabitForm
+        open={showForm}
+        onClose={() => { setShowForm(false); setEditingHabit(undefined); }}
+        onSubmit={handleCreate}
+        initial={editingHabit}
+        saving={createHabit.isPending}
+        error={createHabit.error ? (createHabit.error as Error).message : null}
+      />
     </AppShell>
   );
 }

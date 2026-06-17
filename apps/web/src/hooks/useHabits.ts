@@ -2,19 +2,15 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useUserId } from '@/hooks/useAuth';
 import type { Habit, CreateHabitInput, UpdateHabitInput } from '@repo/db';
 
-async function getUserId() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.user?.id;
-}
-
 export function useHabits() {
+  const userId = useUserId();
   return useQuery({
-    queryKey: ['habits'],
+    queryKey: ['habits', userId],
+    enabled: !!userId,
     queryFn: async (): Promise<Habit[]> => {
-      const userId = await getUserId();
-      if (!userId) return [];
       const { data, error } = await supabase
         .from('habits')
         .select('*')
@@ -22,16 +18,16 @@ export function useHabits() {
         .eq('archived', false)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 }
 
 export function useCreateHabit() {
   const queryClient = useQueryClient();
+  const userId = useUserId();
   return useMutation({
     mutationFn: async (input: CreateHabitInput) => {
-      const userId = await getUserId();
       if (!userId) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('habits')
@@ -49,12 +45,15 @@ export function useCreateHabit() {
 
 export function useUpdateHabit() {
   const queryClient = useQueryClient();
+  const userId = useUserId();
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateHabitInput & { id: string }) => {
+      if (!userId) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('habits')
         .update(input)
         .eq('id', id)
+        .eq('user_id', userId)
         .select()
         .single();
       if (error) throw error;
@@ -66,14 +65,42 @@ export function useUpdateHabit() {
   });
 }
 
-export function useArchiveHabit() {
+export function useDeleteHabit() {
   const queryClient = useQueryClient();
+  const userId = useUserId();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!userId) throw new Error('Not authenticated');
+      const { error } = await supabase
+        .from('habit_completions')
+        .delete()
+        .eq('habit_id', id);
+      if (error) throw error;
+      const { error: habitError } = await supabase
+        .from('habits')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', userId);
+      if (habitError) throw habitError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['completions'] });
+    },
+  });
+}
+
+export function useArchiveHabit() {
+  const queryClient = useQueryClient();
+  const userId = useUserId();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      if (!userId) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('habits')
         .update({ archived: true })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -83,11 +110,11 @@ export function useArchiveHabit() {
 }
 
 export function useCompletions(date: string) {
+  const userId = useUserId();
   return useQuery({
-    queryKey: ['completions', date],
+    queryKey: ['completions', userId, date],
+    enabled: !!userId && !!date,
     queryFn: async () => {
-      const userId = await getUserId();
-      if (!userId) return [];
       const { data, error } = await supabase
         .from('habit_completions')
         .select('*')
@@ -95,16 +122,16 @@ export function useCompletions(date: string) {
         .gte('completed_at', `${date}T00:00:00Z`)
         .lt('completed_at', `${date}T23:59:59Z`);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 }
 
 export function useToggleCompletion() {
   const queryClient = useQueryClient();
+  const userId = useUserId();
   return useMutation({
     mutationFn: async ({ habitId, date }: { habitId: string; date: string }) => {
-      const userId = await getUserId();
       if (!userId) throw new Error('Not authenticated');
       const existing = await supabase
         .from('habit_completions')
@@ -114,6 +141,7 @@ export function useToggleCompletion() {
         .gte('completed_at', `${date}T00:00:00Z`)
         .lt('completed_at', `${date}T23:59:59Z`)
         .maybeSingle();
+      if (existing.error) throw existing.error;
       if (existing.data) {
         const { error } = await supabase
           .from('habit_completions')

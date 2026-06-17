@@ -2,12 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarCheck, List, ChartNoAxesColumn, Settings } from 'lucide-react';
+import { CalendarCheck, BarChart3, Settings } from 'lucide-react';
 
 const tabs = [
   { href: '/', label: 'Today', Icon: CalendarCheck },
-  { href: '/habits', label: 'Habits', Icon: List },
-  { href: '/stats', label: 'Stats', Icon: ChartNoAxesColumn },
+  { href: '/stats', label: 'Statistics', Icon: BarChart3 },
   { href: '/settings', label: 'Settings', Icon: Settings },
 ];
 
@@ -15,24 +14,25 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border safe-bottom">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 ios-blur border-t border-[#38383A]/50 safe-bottom">
+      <div className="flex justify-around items-center h-[50px] max-w-lg mx-auto">
         {tabs.map(({ href, label, Icon }) => {
           const isActive = pathname === href;
           return (
             <Link
               key={href}
               href={href}
-              className="flex flex-col items-center justify-center gap-1 w-16 h-full"
+              className="flex flex-col items-center justify-center gap-0.5 w-16 h-full"
               aria-label={label}
             >
               <Icon
                 size={22}
-                className={isActive ? 'text-accent' : 'text-text-secondary'}
+                strokeWidth={isActive ? 2.5 : 1.5}
+                className={isActive ? 'text-[#007AFF]' : 'text-[#8E8E93]'}
               />
               <span
-                className={`text-xs ${
-                  isActive ? 'text-accent font-medium' : 'text-text-secondary'
+                className={`text-[10px] ${
+                  isActive ? 'text-[#007AFF] font-semibold' : 'text-[#8E8E93]'
                 }`}
               >
                 {label}

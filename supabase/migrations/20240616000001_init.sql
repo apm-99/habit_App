@@ -27,7 +27,7 @@ CREATE TABLE habit_completions (
 
 -- Unique constraint: one completion per habit per UTC day
 CREATE UNIQUE INDEX idx_one_completion_per_day
-  ON habit_completions (habit_id, (completed_at::date));
+  ON habit_completions (habit_id, CAST(completed_at AT TIME ZONE 'UTC' AS date));
 
 -- Indexes
 CREATE INDEX idx_completions_habit_id ON habit_completions(habit_id);

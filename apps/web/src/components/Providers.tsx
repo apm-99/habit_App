@@ -4,6 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { persistQueryClient } from '@tanstack/query-persist-client-core';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { useState, useEffect } from 'react';
+import { AuthProvider } from '@/hooks/useAuth';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { AuthErrorBanner } from '@/components/AuthErrorBanner';
+import { OfflineBanner } from '@/components/OfflineBanner';
 
 function createPersister() {
   if (typeof window === 'undefined') return null;
@@ -33,7 +37,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const persister = createPersister();
     if (!persister) return;
 
-    const unsubscribe = persistQueryClient({
+    const [unsubscribe] = persistQueryClient({
       queryClient,
       persister,
       maxAge: 1000 * 60 * 60 * 24 * 7,
@@ -43,6 +47,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [queryClient]);
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AuthErrorBanner />
+          <OfflineBanner />
+          {children}
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
