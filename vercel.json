@@ -1,7 +1,6 @@
 {
   "framework": "nextjs",
-  "rootDirectory": "apps/web",
-  "buildCommand": "next build",
+  "buildCommand": "cd apps/web && next build",
   "installCommand": "pnpm install",
   "nodeVersion": "20.x",
   "regions": ["iad1"]
