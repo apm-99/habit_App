@@ -1,6 +1,4 @@
 {
-  "buildCommand": "cd apps/web && next build",
-  "installCommand": "pnpm install",
   "framework": "nextjs",
   "regions": ["iad1"]
 }
