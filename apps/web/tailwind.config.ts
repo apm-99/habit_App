@@ -5,6 +5,11 @@ const config: Config = {
   darkMode: 'class',
   theme: {
     extend: {
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+        'decelerate': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+      },
       colors: {
         background: '#000000',
         card: '#1C1C1E',

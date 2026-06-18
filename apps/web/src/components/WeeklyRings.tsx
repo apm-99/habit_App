@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { startOfWeek, addDays, format, isSameDay } from 'date-fns';
+import { startOfWeek, addDays, format, isSameDay, isToday } from 'date-fns';
 import type { Habit } from '@repo/db';
 
 interface WeeklyRingsProps {
@@ -11,21 +11,7 @@ interface WeeklyRingsProps {
   onSelectDay?: (date: Date) => void;
 }
 
-function ringPath(pct: number): string {
-  const r = 17, cx = 21, cy = 21;
-  const circ = 2 * Math.PI * r;
-  const p = Math.min(pct, 1);
-  const len = circ * p;
-  const dashoffset = circ - len;
-
-  return [
-    `<svg class="w-[40px] h-[40px]" viewBox="0 0 42 42">`,
-    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#38383A" stroke-width="2.5"/>`,
-    p > 0 ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#3E6AE1" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${dashoffset}" transform="rotate(-90 ${cx} ${cy})"/>` : '',
-    p > 0 ? `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="#3E6AE1" font-size="12" font-weight="600" font-family="-apple-system, system-ui, sans-serif">${Math.round(p * 100)}</text>` : '',
-    `</svg>`,
-  ].join('');
-}
+const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectDay }: WeeklyRingsProps) {
   const weekDays = useMemo(() => {
@@ -34,36 +20,88 @@ export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectD
     return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   }, [selectedDate]);
 
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const today = new Date();
+  const weekPct = useMemo(() => {
+    let totalScheduled = 0;
+    let totalCompleted = 0;
+    for (const day of weekDays) {
+      const key = format(day, 'yyyy-MM-dd');
+      const activeHabits = habits.filter((h) => {
+        const dayIdx = day.getDay();
+        if (h.frequency_type === 'daily') return true;
+        if (h.frequency_type === 'custom_days') return h.custom_days?.includes(dayIdx) ?? false;
+        return true;
+      });
+      const completed = completionsByDate[key] || [];
+      totalScheduled += activeHabits.length;
+      totalCompleted += Math.min(completed.length, activeHabits.length);
+    }
+    return totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
+  }, [habits, completionsByDate, weekDays]);
 
   return (
-    <div className="flex justify-center gap-[18px] py-2 mb-6">
-      {weekDays.map((day, i) => {
-        const key = format(day, 'yyyy-MM-dd');
-        const isCurrentDay = selectedDate ? isSameDay(day, selectedDate) : isSameDay(day, today);
-        const activeHabits = habits.filter((h) => {
-          const dayIdx = day.getDay();
-          if (h.frequency_type === 'daily') return true;
-          if (h.frequency_type === 'custom_days') return h.custom_days?.includes(dayIdx) ?? false;
-          return true;
-        });
-        const completed = completionsByDate[key] || [];
-        const pct = activeHabits.length > 0 ? completed.length / activeHabits.length : 0;
+    <div className="py-2 mb-6">
+      <div className="flex justify-center gap-[18px]">
+        {weekDays.map((day, i) => {
+          const key = format(day, 'yyyy-MM-dd');
+          const dayIsToday = isToday(day);
+          const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
+          const activeHabits = habits.filter((h) => {
+            const dayIdx = day.getDay();
+            if (h.frequency_type === 'daily') return true;
+            if (h.frequency_type === 'custom_days') return h.custom_days?.includes(dayIdx) ?? false;
+            return true;
+          });
+          const completed = completionsByDate[key] || [];
+          const pct = activeHabits.length > 0 ? completed.length / activeHabits.length : 0;
 
-        return (
-          <button
-            key={i}
-            onClick={() => onSelectDay?.(day)}
-            className="flex flex-col items-center gap-[6px] animate-[ringFadeUp_0.3s_cubic-bezier(0.16,1,0.3,1)_both] bg-transparent border-none p-0 cursor-pointer active:opacity-60 transition-opacity" style={{ animationDelay: `${i * 0.05}s` }}
-          >
-            <div
-              dangerouslySetInnerHTML={{ __html: isCurrentDay ? ringPath(pct) : `<div class="w-[40px] h-[40px] rounded-full border-[1.5px] ${pct > 0 ? 'border-muted' : 'border-border'} flex items-center justify-center"><span class="text-muted text-[10px]">${pct > 0 ? '•' : ''}</span></div>` }}
-            />
-            <span className="text-[11px] text-muted text-center">{dayLabels[i]}</span>
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={i}
+              onClick={() => onSelectDay?.(day)}
+              className="flex flex-col items-center gap-[6px] animate-[ringFadeUp_0.3s_cubic-bezier(0.16,1,0.3,1)_both] bg-transparent border-none p-0 cursor-pointer active:opacity-60 transition-opacity"
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
+              <div className="relative w-[42px] h-[42px] flex items-center justify-center">
+                {isSelected && (
+                  <div className="absolute inset-0 rounded-full bg-[#3E6AE1]/15 border border-[#3E6AE1]/40 pointer-events-none transition-all duration-200 ease-decelerate" />
+                )}
+                {dayIsToday && (
+                  <div className="absolute inset-0 rounded-full border-2 border-[#007AFF] pointer-events-none transition-all duration-200 ease-decelerate" style={isSelected ? { borderColor: '#007AFF' } : undefined} />
+                )}
+                {pct > 0 ? (
+                  <svg className="w-[36px] h-[36px]" viewBox="0 0 42 42">
+                    <circle cx="21" cy="21" r="17" fill="none" stroke="#38383A" strokeWidth="2.5" />
+                    <circle
+                      cx="21" cy="21" r="17" fill="none" stroke="#3E6AE1" strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 17}`}
+                      strokeDashoffset={`${2 * Math.PI * 17 * (1 - Math.min(pct, 1))}`}
+                      transform="rotate(-90 21 21)"
+                      style={{ transition: 'stroke-dashoffset 0.4s var(--ease-smooth)' }}
+                    />
+                    <text x="21" y="21" textAnchor="middle" dominantBaseline="central" fill="#3E6AE1" fontSize="12" fontWeight="600" fontFamily="-apple-system, system-ui, sans-serif">
+                      {Math.round(pct * 100)}
+                    </text>
+                  </svg>
+                ) : (
+                  <div className="w-[36px] h-[36px] rounded-full border-[1.5px] border-border flex items-center justify-center">
+                    <span className="text-muted text-[10px]">&bull;</span>
+                  </div>
+                )}
+              </div>
+              <span className={`text-[11px] text-center transition-colors duration-150 ${dayIsToday ? 'font-semibold text-[#007AFF]' : isSelected ? 'font-medium text-text-secondary' : 'text-muted'}`}>
+                {dayLabels[i]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+        <div className="flex items-center justify-center gap-1.5 mt-[10px]">
+          <div className="h-[3px] flex-1 max-w-[120px] rounded-full bg-border overflow-hidden">
+            <div className="h-full rounded-full bg-[#3E6AE1] transition-all duration-500 ease-smooth" style={{ width: `${weekPct}%` }} />
+          </div>
+          <span className="text-[11px] font-medium text-text-secondary">{weekPct}%</span>
+        </div>
     </div>
   );
 }

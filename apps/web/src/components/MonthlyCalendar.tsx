@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMonthlyData } from '@/hooks/useStats';
 
 function getIntensityColor(completed: number, total: number): string {
-  if (total === 0) return 'bg-[#2C2C2E]/50';
+  if (total === 0 || completed === 0) return 'bg-[#2C2C2E]/50';
   const ratio = completed / total;
   if (ratio === 1) return 'bg-[#34C759]';
   if (ratio >= 0.66) return 'bg-[#34C759]/70';

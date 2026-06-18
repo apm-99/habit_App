@@ -5,7 +5,7 @@ import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
 import { WeeklyRings } from '@/components/WeeklyRings';
-import { useHabits, useCompletions, useToggleCompletion, useCreateHabit, useUpdateHabit, useDeleteHabit } from '@/hooks/useHabits';
+import { useHabits, useCompletions, useToggleCompletion, useCreateHabit, useUpdateHabit, useDeleteHabit, useWeekCompletions } from '@/hooks/useHabits';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { isScheduledToday } from '@/lib/schedule';
 import type { CreateHabitInput, Habit } from '@repo/db';
@@ -26,6 +26,7 @@ export default function TodayPage() {
 
   const { data: habits, isLoading: habitsLoading } = useHabits();
   const { data: completions } = useCompletions(dateStr);
+  const { data: weekCompletions } = useWeekCompletions(selectedDate);
   const toggleCompletion = useToggleCompletion();
   const createHabit = useCreateHabit();
   const updateHabit = useUpdateHabit();
@@ -77,6 +78,25 @@ export default function TodayPage() {
     return [...pending, ...done];
   }, [todayHabits, completedIds]);
 
+  const weeklyProgressMap = useMemo(() => {
+    if (!weekCompletions) return new Map<string, { completed: number; target: number }>();
+    const map = new Map<string, { completed: number; target: number }>();
+    for (const habit of habits ?? []) {
+      let target = 0;
+      if (habit.frequency_type === 'daily') target = 7;
+      else if (habit.frequency_type === 'weekly') target = habit.target_count;
+      else if (habit.frequency_type === 'custom_days') target = habit.custom_days?.length ?? 0;
+
+      let completed = 0;
+      for (const [, ids] of Object.entries(weekCompletions)) {
+        if (ids.includes(habit.id)) completed++;
+      }
+
+      map.set(habit.id, { completed: Math.min(completed, target), target });
+    }
+    return map;
+  }, [habits, weekCompletions]);
+
   const completedCount = useMemo(() => todayHabits.filter(h => completedIds.has(h.id)).length, [todayHabits, completedIds]);
 
   const goToPrevDay = useCallback(() => setSelectedDate(d => subDays(d, 1)), []);
@@ -86,11 +106,9 @@ export default function TodayPage() {
   const dayLabel = mounted ? format(selectedDate, isCurrentDay ? 'EEEE, MMMM d' : 'MMM d, yyyy') : '';
 
   const completionsByDate = useMemo(() => {
-    if (!completions) return {};
-    const map: Record<string, string[]> = {};
-    map[dateStr] = completions.map((c) => c.habit_id);
-    return map;
-  }, [completions, dateStr]);
+    if (!weekCompletions) return {};
+    return weekCompletions;
+  }, [weekCompletions]);
 
   function YearProgress() {
     const now = new Date();
@@ -100,11 +118,13 @@ export default function TodayPage() {
     return (
       <div className="mt-10">
         <p className="text-[13px] font-[500] text-text-secondary tracking-[-0.01em] mb-3">Year Progress</p>
-        <p className="text-[13px] text-muted mb-2.5">{dayOfYear} of {daysInYear} days</p>
-        <div className="h-[3px] rounded-full bg-border overflow-hidden">
-          <div className="h-full rounded-full bg-text-secondary/40" style={{ width: `${pct}%` }} />
+        <div className="flex items-baseline gap-1.5 mb-2.5">
+          <span className="text-[28px] font-[350] text-text-primary tracking-[-0.02em]">{pct.toFixed(1)}%</span>
+          <span className="text-[13px] text-muted">{dayOfYear} / {daysInYear} days</span>
         </div>
-        <p className="text-[13px] text-muted mt-2">{pct.toFixed(1)}%</p>
+          <div className="h-[4px] rounded-full bg-border overflow-hidden">
+            <div className="h-full rounded-full bg-[#007AFF]/70 transition-all duration-500 ease-smooth" style={{ width: `${pct}%` }} />
+          </div>
       </div>
     );
   }
@@ -147,7 +167,7 @@ export default function TodayPage() {
 
         <WeeklyRings habits={habits || []} completionsByDate={completionsByDate} selectedDate={selectedDate} onSelectDay={setSelectedDate} />
 
-        {!mounted || habitsLoading ? (
+        {habitsLoading ? (
           <div className="space-y-[10px]">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-[52px] rounded-[10px] bg-card animate-pulse" />
@@ -192,6 +212,7 @@ export default function TodayPage() {
                     onToggle={() => handleToggle(habit.id)}
                     onClick={() => handleEdit(habit)}
                     onDelete={() => handleDelete(habit.id)}
+                    weeklyProgress={weeklyProgressMap.get(habit.id)}
                   />
                 </div>
               ))}

@@ -13,9 +13,11 @@ interface HabitCardProps {
   onClick?: () => void;
   showToggle?: boolean;
   onDelete?: () => void;
+  weeklyProgress?: { completed: number; target: number };
 }
 
 const SWIPE_THRESHOLD = 80;
+const LONG_PRESS_MS = 500;
 
 const CATEGORY_EMOJI: Record<string, string> = {
   health: '\u{2764}\u{FE0F}',
@@ -47,23 +49,19 @@ function getHabitColor(habit: Habit): string {
   return CATEGORY_COLORS[habit.category?.toLowerCase()] || CATEGORY_COLORS.other;
 }
 
-export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, onClick, showToggle, onDelete }: HabitCardProps) {
+export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, onClick, showToggle, onDelete, weeklyProgress }: HabitCardProps) {
   const emoji = getHabitEmoji(habit);
   const color = getHabitColor(habit);
   const scheduleText = getWeeklyScheduleDescription(habit);
   const [x, setX] = useState(0);
   const [swiping, setSwiping] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
-  const [animState, setAnimState] = useState<'idle' | 'completing'>('idle');
   const [localCompleted, setLocalCompleted] = useState<boolean | null>(null);
-  const animTimeout = useRef<ReturnType<typeof setTimeout>>();
-  const currentX = useRef(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const swiped = useRef(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const isCompleted = localCompleted ?? completed;
-
-  useEffect(() => {
-    return () => clearTimeout(animTimeout.current);
-  }, []);
 
   useEffect(() => {
     if (completed !== undefined) {
@@ -71,62 +69,89 @@ export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, o
     }
   }, [completed]);
 
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const onDown = () => {
+      swiped.current = false;
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = setTimeout(() => {
+        onClick?.();
+      }, LONG_PRESS_MS);
+    };
+
+    const onUp = () => {
+      clearTimeout(longPressTimer.current);
+    };
+
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+    el.addEventListener('pointermove', onUp);
+    el.addEventListener('touchmove', onUp, { passive: true });
+
+    return () => {
+      clearTimeout(longPressTimer.current);
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+      el.removeEventListener('pointermove', onUp);
+      el.removeEventListener('touchmove', onUp);
+    };
+  }, [onClick]);
+
   const handleToggle = useCallback(() => {
     const next = !isCompleted;
     setLocalCompleted(next);
-    if (next) {
-      setAnimState('completing');
-      clearTimeout(animTimeout.current);
-      animTimeout.current = setTimeout(() => setAnimState('idle'), 400);
-    }
     onToggle?.();
   }, [isCompleted, onToggle]);
 
   const bind = useDrag(
     ({ movement: [mx], active, direction: [dx], cancel }) => {
-      if (showToggle && dx > 0 && mx > SWIPE_THRESHOLD && !active) {
-        handleToggle();
-        cancel?.();
-        setX(0);
-        return;
-      }
-      if (onDelete && dx < 0 && mx < -SWIPE_THRESHOLD && !active) {
-        setShowDelete(true);
-        setX(0);
-        return;
-      }
       if (active) {
-        currentX.current = mx;
+        swiped.current = true;
         setSwiping(true);
-        if (onDelete && mx < 0) {
+        if (mx > 0) {
+          setX(Math.min(mx, SWIPE_THRESHOLD));
+        } else if (onDelete) {
           setX(Math.max(mx, -SWIPE_THRESHOLD));
         } else {
           setX(0);
         }
-      } else {
-        setSwiping(false);
-        if (onDelete && mx < -SWIPE_THRESHOLD / 2) {
-          setShowDelete(true);
-        }
-        setX(0);
+        return;
+      }
+
+      setSwiping(false);
+      setX(0);
+
+      if (dx > 0 && mx > SWIPE_THRESHOLD && showToggle) {
+        handleToggle();
+        cancel?.();
+        return;
+      }
+      if (dx < 0 && mx < -SWIPE_THRESHOLD && onDelete) {
+        setShowDelete(true);
+        return;
       }
     },
-    { axis: 'x', filterTaps: true },
+    { axis: 'x' },
   );
 
-  const handleDeleteTap = useCallback(() => {
-    onDelete?.();
-    setShowDelete(false);
-  }, [onDelete]);
-
   const handleClick = useCallback(() => {
-    if (currentX.current !== 0) return;
+    clearTimeout(longPressTimer.current);
+    if (swiped.current) return;
     if (showToggle) {
       handleToggle();
     } else {
       onClick?.();
     }
   }, [showToggle, handleToggle, onClick]);
+
+  const handleDeleteTap = useCallback(() => {
+    onDelete?.();
+    setShowDelete(false);
+  }, [onDelete]);
 
   return (
     <div className="relative rounded-[10px] overflow-hidden">
@@ -139,37 +164,44 @@ export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, o
         </button>
       )}
       <div
-        className="relative flex items-center gap-3 py-3.5 pr-4 bg-card rounded-[10px] select-none touch-pan-y"
+        ref={cardRef}
+        className="relative flex items-center gap-3 py-3.5 pr-4 bg-card rounded-[10px] select-none touch-pan-y cursor-pointer"
         style={{
           paddingLeft: '20px',
           transform: `translateX(${x}px)`,
-          transition: swiping ? 'none' : 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+          transition: swiping ? 'none' : 'transform 0.3s var(--ease-spring)',
         }}
-        onContextMenu={(e) => { e.preventDefault(); onClick?.(); }}
-        onClick={handleClick}
         {...bind()}
+        onClick={handleClick}
+        onContextMenu={(e) => { e.preventDefault(); onClick?.(); }}
       >
         <span className="text-lg shrink-0 pointer-events-none">{emoji}</span>
-        <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full pointer-events-none"
-          style={{ backgroundColor: isCompleted ? '#30D158' : color, opacity: isCompleted ? 0.15 : 0.6 }}
+        <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full pointer-events-none transition-all duration-300 ease-decelerate"
+          style={{ backgroundColor: isCompleted ? '#30D158' : color, opacity: isCompleted ? 0.2 : 0.6 }}
         />
         <div className="flex-1 min-w-0 pointer-events-none ml-3">
-          <span className={`block text-[17px] font-normal leading-tight transition-colors duration-200 ${isCompleted ? 'text-text-secondary' : 'text-text-primary'}`}>
+          <span className={`block text-[17px] font-normal leading-tight transition-all duration-200 ease-decelerate ${isCompleted ? 'text-text-secondary' : 'text-text-primary'}`}>
             {habit.name}
           </span>
           {scheduleText && (
-            <span className={`block text-[13px] text-muted mt-[2px] font-normal transition-colors duration-200 ${isCompleted ? 'opacity-40' : ''}`}>
+            <span className={`block text-[13px] text-muted mt-[2px] font-normal transition-all duration-200 ease-decelerate ${isCompleted ? 'opacity-40' : ''}`}>
               {scheduleText}
+            </span>
+          )}
+          {weeklyProgress && weeklyProgress.target > 0 && showToggle && (
+            <span className="block text-[12px] text-text-secondary/70 mt-[1px] font-normal">
+              {weeklyProgress.completed} of {weeklyProgress.target} this week
             </span>
           )}
         </div>
         {showToggle && (
           <div
-            onClick={(e) => { e.stopPropagation(); handleToggle(); }}
-            className="shrink-0 w-[26px] h-[26px] rounded-full border-[1.5px] flex items-center justify-center transition-all duration-200 cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); clearTimeout(longPressTimer.current); swiped.current = false; handleToggle(); }}
+            className="shrink-0 w-[26px] h-[26px] rounded-full border-[1.5px] flex items-center justify-center transition-all duration-200 ease-decelerate cursor-pointer"
             style={{
               borderColor: isCompleted ? '#30D158' : '#636366',
               backgroundColor: isCompleted ? '#30D158' : 'transparent',
+              boxShadow: isCompleted ? '0 0 10px rgba(48, 209, 88, 0.25)' : 'none',
             }}
           >
             {isCompleted ? (
@@ -182,12 +214,10 @@ export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, o
           </div>
         )}
       </div>
-      {animState === 'completing' && (
-        <div className="absolute inset-0 rounded-[10px] bg-[#30D158]/[0.18] animate-[greenFlash_0.35s_ease-out] pointer-events-none" />
-      )}
-      {isCompleted && animState === 'idle' && (
-        <div className="absolute inset-0 rounded-[10px] bg-[#30D158]/[0.06] pointer-events-none" />
-      )}
+      <div
+        className="absolute inset-0 rounded-[10px] pointer-events-none transition-opacity duration-300 ease-decelerate"
+        style={{ backgroundColor: 'rgba(48, 209, 88, 0.08)', opacity: isCompleted ? 1 : 0 }}
+      />
     </div>
   );
 });

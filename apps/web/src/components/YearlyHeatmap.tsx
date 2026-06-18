@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useYearlyData } from '@/hooks/useStats';
 
 function getHeatmapColor(completed: number, total: number): string {
-  if (total === 0) return 'bg-[#2C2C2E]/40';
+  if (total === 0 || completed === 0) return 'bg-[#2C2C2E]/40';
   const ratio = completed / total;
   if (ratio === 1) return 'bg-[#34C759]';
   if (ratio >= 0.66) return 'bg-[#34C759]/60';

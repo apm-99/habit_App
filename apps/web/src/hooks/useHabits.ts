@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useUserId } from '@/hooks/useAuth';
+import { startOfWeek, addDays, format } from 'date-fns';
 import type { Habit, CreateHabitInput, UpdateHabitInput } from '@repo/db';
 
 export function useHabits() {
@@ -127,6 +128,41 @@ export function useCompletions(date: string) {
   });
 }
 
+export function useWeekCompletions(selectedDate: Date) {
+  const userId = useUserId();
+  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
+  const weekEnd = addDays(weekStart, 6);
+
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+  const weekEndStr = format(weekEnd, 'yyyy-MM-dd');
+
+  return useQuery({
+    queryKey: ['completions', 'week', userId, weekStartStr],
+    enabled: !!userId,
+    queryFn: async (): Promise<Record<string, string[]>> => {
+      const { data, error } = await supabase
+        .from('habit_completions')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('completed_at', `${weekStartStr}T00:00:00Z`)
+        .lt('completed_at', `${weekEndStr}T23:59:59Z`);
+      if (error) throw error;
+
+      const byDate: Record<string, string[]> = {};
+      for (let i = 0; i < 7; i++) {
+        byDate[format(addDays(weekStart, i), 'yyyy-MM-dd')] = [];
+      }
+      for (const c of data ?? []) {
+        const day = format(new Date(c.completed_at), 'yyyy-MM-dd');
+        if (byDate[day]) {
+          byDate[day].push(c.habit_id);
+        }
+      }
+      return byDate;
+    },
+  });
+}
+
 export function useToggleCompletion() {
   const queryClient = useQueryClient();
   const userId = useUserId();
@@ -152,13 +188,14 @@ export function useToggleCompletion() {
       } else {
         const { error } = await supabase
           .from('habit_completions')
-          .insert([{ habit_id: habitId, user_id: userId }]);
+          .insert([{ habit_id: habitId, user_id: userId, completed_at: `${date}T12:00:00Z` }]);
         if (error) throw error;
         return { completed: true };
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['completions'] });
+      queryClient.invalidateQueries({ queryKey: ['all-completions'] });
     },
   });
 }
