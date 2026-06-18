@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
-import { useHabits, useCreateHabit, useDeleteHabit } from '@/hooks/useHabits';
+import { useHabits, useCreateHabit, useUpdateHabit, useDeleteHabit } from '@/hooks/useHabits';
 import { Plus } from 'lucide-react';
 import type { CreateHabitInput, Habit } from '@repo/db';
 
@@ -13,10 +13,17 @@ export default function HabitsPage() {
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>(undefined);
   const { data: habits, isLoading } = useHabits();
   const createHabit = useCreateHabit();
+  const updateHabit = useUpdateHabit();
   const deleteHabit = useDeleteHabit();
 
-  const handleCreate = async (input: CreateHabitInput) => {
-    await createHabit.mutateAsync(input);
+  const handleSubmit = async (input: CreateHabitInput) => {
+    if (editingHabit) {
+      await updateHabit.mutateAsync({ id: editingHabit.id, ...input });
+    } else {
+      await createHabit.mutateAsync(input);
+    }
+    setShowForm(false);
+    setEditingHabit(undefined);
   };
 
   const handleDelete = async (id: string) => {
@@ -69,10 +76,10 @@ export default function HabitsPage() {
       <HabitForm
         open={showForm}
         onClose={() => { setShowForm(false); setEditingHabit(undefined); }}
-        onSubmit={handleCreate}
+        onSubmit={handleSubmit}
         initial={editingHabit}
-        saving={createHabit.isPending}
-        error={createHabit.error ? (createHabit.error as Error).message : null}
+        saving={createHabit.isPending || updateHabit.isPending}
+        error={createHabit.error ? (createHabit.error as Error).message : updateHabit.error ? (updateHabit.error as Error).message : null}
       />
     </AppShell>
   );
