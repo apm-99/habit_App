@@ -37,7 +37,7 @@ Run a single test file: `pnpm --filter=web vitest run src/test/<file>.test.ts`
 - **Build/Types order**: `turbo.json` declares `typecheck` depends on `^build` — so first build dependencies, then typecheck. CI runs: typecheck → lint → test → build on `--filter=web`.
 - **Env required**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Placeholder values let the app start but Supabase calls will fail.
 - **`.env.local`** is gitignored — never commit secrets. Example at `apps/web/.env.example`.
-- **Vercel build** uses custom command: `cd apps/web && pnpm build` (defined in root `vercel.json`). DON'T use `npx --no-install next build` — pnpm hoists binaries to root `node_modules/.bin`, not under `apps/web/`.
+- **Vercel build** defined in root `vercel.json` uses `rootDirectory: "apps/web"` (no custom buildCommand — Vercel auto-detects Next.js). DON'T use `cd apps/web && npx --no-install next build` — pnpm hoists binaries to root `node_modules/.bin`, not under `apps/web/`. DON'T set a custom `buildCommand`; Vercel's `@vercel/nft` dependency tracing handles pnpm correctly only with `rootDirectory`.
 - **Service Worker**: Serwist PWA. Source at `src/app/sw.ts`, compiled to `public/sw.js`. Offline fallback page at `/~offline`.
 - **Dark-only**: Tailwind `dark` class always set on `<html>`. No light mode toggle.
 
