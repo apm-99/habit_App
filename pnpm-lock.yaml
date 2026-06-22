@@ -65,6 +65,9 @@ importers:
       react-dom:
         specifier: ^18.3.0
         version: 18.3.1(react@18.3.1)
+      serwist:
+        specifier: ^9.0.0
+        version: 9.5.11(browserslist@4.28.2)(typescript@5.9.3)
       zod:
         specifier: ^3.23.0
         version: 3.25.76
