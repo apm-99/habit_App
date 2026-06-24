@@ -22,6 +22,9 @@ vi.mock('@/lib/supabase', () => {
     single: mockSingle,
   };
 
+  const mockUnsubscribe = vi.fn();
+  const mockOnAuthStateChange = vi.fn(() => ({ data: { subscription: { unsubscribe: mockUnsubscribe } } }));
+
   mockSelect.mockReturnValue(chainable);
   mockEq.mockReturnValue(chainable);
   mockOrder.mockResolvedValue({ data: [], error: null });
@@ -34,6 +37,7 @@ vi.mock('@/lib/supabase', () => {
       auth: {
         getSession: vi.fn().mockResolvedValue({ data: { session: mockSession } }),
         signInAnonymously: vi.fn().mockResolvedValue({ data: { session: mockSession }, error: null }),
+        onAuthStateChange: mockOnAuthStateChange,
       },
     },
   };

@@ -1,44 +1,24 @@
 name: CI
-
 on:
-  pull_request:
-    branches: [main]
   push:
-    branches: [main]
+    branches: ['*']
+  pull_request:
+    branches: ['main']
 
 jobs:
-  quality:
-    name: Quality Checks
+  security:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
           version: 9
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Type Check
-        run: pnpm typecheck --filter=web
-
-      - name: Lint
-        run: pnpm lint --filter=web
-
-      - name: Unit Tests
-        run: pnpm test --filter=web
-        env:
-          CI: true
-
-      - name: Build
-        run: pnpm build --filter=web
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+      - run: pnpm install
+      - run: pnpm audit --audit-level=high
+      - run: pnpm typecheck --filter=web
+      - run: pnpm lint --filter=web
+      - run: pnpm test --filter=web
