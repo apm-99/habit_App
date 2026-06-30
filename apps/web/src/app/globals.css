@@ -4,18 +4,17 @@
 
 @layer base {
   :root {
-    --bg-primary: #000000;
-    --bg-card: #1C1C1E;
-    --bg-elevated: #2C2C2E;
+    --bg-primary: #0B0B0D;
+    --bg-card: #17171A;
+    --bg-elevated: #202024;
     --text-primary: #F5F5F7;
-    --text-secondary: #8E8E93;
+    --text-secondary: #9A9AA2;
     --muted: #636366;
-    --accent-primary: #3E6AE1;
-    --accent-secondary: #5AC8FA;
-    --success: #30D158;
-    --destructive: #FF453A;
-    --border: #38383A;
-    --separator: #38383A;
+    --tertiary: #5C5C63;
+    --accent-primary: #FF6B4A;
+    --success: #3DD68C;
+    --destructive: #FF5C5C;
+    --border: #2A2A2F;
     --ease-out: cubic-bezier(0, 0, 0.2, 1);
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
@@ -46,7 +45,7 @@
   }
 
   ::selection {
-    background: rgba(62, 106, 225, 0.25);
+    background: rgba(255, 107, 74, 0.25);
   }
 
   ::-webkit-scrollbar {
@@ -97,11 +96,6 @@
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
   }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes fadeIn {

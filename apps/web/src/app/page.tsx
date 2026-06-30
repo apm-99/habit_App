@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
-import { WeeklyRings } from '@/components/WeeklyRings';
+import { DateHeader } from '@/components/DateHeader';
 import { useHabits, useCompletions, useToggleCompletion, useCreateHabit, useUpdateHabit, useDeleteHabit, useWeekCompletions } from '@/hooks/useHabits';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { isScheduledToday } from '@/lib/schedule';
@@ -105,11 +106,6 @@ export default function TodayPage() {
 
   const dayLabel = mounted ? format(selectedDate, isCurrentDay ? 'EEEE, MMMM d' : 'MMM d, yyyy') : '';
 
-  const completionsByDate = useMemo(() => {
-    if (!weekCompletions) return {};
-    return weekCompletions;
-  }, [weekCompletions]);
-
   function YearProgress() {
     const now = new Date();
     const dayOfYear = getDayOfYear(now);
@@ -123,7 +119,7 @@ export default function TodayPage() {
           <span className="text-[13px] text-muted">{dayOfYear} / {daysInYear} days</span>
         </div>
           <div className="h-[4px] rounded-full bg-border overflow-hidden">
-            <div className="h-full rounded-full bg-[#007AFF]/70 transition-all duration-500 ease-smooth" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full bg-accent/70 transition-all duration-500 ease-smooth" style={{ width: `${pct}%` }} />
           </div>
       </div>
     );
@@ -165,12 +161,17 @@ export default function TodayPage() {
           </div>
         </div>
 
-        <WeeklyRings habits={habits || []} completionsByDate={completionsByDate} selectedDate={selectedDate} onSelectDay={setSelectedDate} />
+        <DateHeader
+          selectedDate={selectedDate}
+          onSelectDay={setSelectedDate}
+          completedCount={completedCount}
+          totalCount={todayHabits.length}
+        />
 
         {habitsLoading ? (
-          <div className="space-y-[10px]">
+          <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[52px] rounded-[10px] bg-card animate-pulse" />
+              <div key={i} className="h-[52px] rounded-2xl bg-surface-card animate-pulse" />
             ))}
           </div>
         ) : todayHabits.length === 0 ? (
@@ -190,21 +191,14 @@ export default function TodayPage() {
           </div>
         ) : (
           <>
-            <p className="text-[14px] text-text-secondary mb-5">
-              <strong className="font-[500] text-text-primary">{completedCount} of {todayHabits.length}</strong> completed
-              {isCurrentDay && (
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="ml-3 text-[15px] text-accent bg-none border-none p-0 align-baseline font-[400] cursor-pointer active:opacity-50 transition-opacity"
-                >
-                  Add
-                </button>
-              )}
-            </p>
-
-            <div className="space-y-5">
+            <div className="space-y-2">
               {sortedHabits.map((habit) => (
-                <div key={habit.id} className="animate-[fadeSlideUp_0.35s_cubic-bezier(0.16,1,0.3,1)_both]">
+                <motion.div
+                  key={habit.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                >
                   <HabitCard
                     habit={habit}
                     showToggle
@@ -214,7 +208,7 @@ export default function TodayPage() {
                     onDelete={() => handleDelete(habit.id)}
                     weeklyProgress={weeklyProgressMap.get(habit.id)}
                   />
-                </div>
+                </motion.div>
               ))}
             </div>
           </>

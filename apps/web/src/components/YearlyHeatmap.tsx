@@ -10,8 +10,8 @@ function getHeatmapColor(completed: number, total: number): string {
   const ratio = completed / total;
   if (ratio === 1) return 'bg-[#34C759]';
   if (ratio >= 0.66) return 'bg-[#34C759]/60';
-  if (ratio >= 0.33) return 'bg-[#007AFF]/40';
-  return 'bg-[#007AFF]/20';
+  if (ratio >= 0.33) return 'bg-accent/40';
+  return 'bg-accent/20';
 }
 
 export function YearlyHeatmap() {
@@ -65,7 +65,7 @@ export function YearlyHeatmap() {
                   return (
                     <div
                       key={di}
-                      className={`w-[10px] h-[10px] rounded-[2px] ${getHeatmapColor(completed, total)} ${isSameDay(day, today) ? 'ring-[1px] ring-[#007AFF]' : ''}`}
+                       className={`w-[10px] h-[10px] rounded-[2px] ${getHeatmapColor(completed, total)} ${isSameDay(day, today) ? 'ring-[1px] ring-accent' : ''}`}
                       title={`${format(day, 'MMM d, yyyy')}: ${completed}/${total}`}
                     />
                   );
@@ -79,8 +79,8 @@ export function YearlyHeatmap() {
       <div className="flex items-center justify-end gap-[3px] mt-2">
         <span className="text-[9px] text-[#48484A]">Less</span>
         <div className="w-[10px] h-[10px] rounded-[2px] bg-[#2C2C2E]/40" />
-        <div className="w-[10px] h-[10px] rounded-[2px] bg-[#007AFF]/20" />
-        <div className="w-[10px] h-[10px] rounded-[2px] bg-[#007AFF]/40" />
+        <div className="w-[10px] h-[10px] rounded-[2px] bg-accent/20" />
+        <div className="w-[10px] h-[10px] rounded-[2px] bg-accent/40" />
         <div className="w-[10px] h-[10px] rounded-[2px] bg-[#34C759]/60" />
         <div className="w-[10px] h-[10px] rounded-[2px] bg-[#34C759]" />
         <span className="text-[9px] text-[#48484A]">More</span>

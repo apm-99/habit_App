@@ -203,10 +203,10 @@ export function useToggleCompletion() {
 const categoryColors: Record<string, string> = {
   health: '#30D158',
   fitness: '#FF9F0A',
-  learning: '#0A84FF',
+  learning: '#FF6482',
   mindfulness: '#BF5AF2',
   work: '#FF453A',
-  social: '#5AC8FA',
+  social: '#AF52DE',
   finance: '#FFD60A',
   other: '#8E8E93',
 };

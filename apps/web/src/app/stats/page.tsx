@@ -3,6 +3,7 @@
 import { AppShell } from '@/components/AppShell';
 import { useHabits } from '@/hooks/useHabits';
 import { SummaryCards } from '@/components/SummaryCards';
+import { StreakChart } from '@/components/StreakChart';
 import { MonthlyCalendar } from '@/components/MonthlyCalendar';
 import { YearlyHeatmap } from '@/components/YearlyHeatmap';
 
@@ -32,6 +33,7 @@ export default function StatsPage() {
           </div>
         ) : (
           <div className="space-y-6">
+            <StreakChart />
             <SummaryCards />
             <MonthlyCalendar />
             <YearlyHeatmap />

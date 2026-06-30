@@ -7,7 +7,8 @@ import { useUserId } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { calculateCurrentStreak, calculateLongestStreak } from '@/lib/streaks';
 import { calculateRate, calculateOverallRate, getDayCompletionRatio } from '@/lib/completion-rate';
-import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from 'date-fns';
+import { isScheduledToday } from '@/lib/schedule';
+import { startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subDays, eachDayOfInterval } from 'date-fns';
 import type { Habit, HabitCompletion } from '@repo/db';
 
 function useAllCompletions() {
@@ -103,4 +104,35 @@ export function useCompletionRate(monthsBack: number = 1) {
       }),
     };
   }, [habits, completions, monthsBack]);
+}
+
+export function useDailyRates(daysBack: number = 30) {
+  const { data: habits } = useHabits();
+  const { data: completions } = useAllCompletions();
+
+  return useMemo(() => {
+    if (!habits || !completions) return null;
+    const end = new Date();
+    const start = subDays(end, daysBack - 1);
+    const days = eachDayOfInterval({ start, end });
+    return days.map((date) => {
+      let total = 0;
+      let completed = 0;
+      for (const habit of habits) {
+        if (!isScheduledToday(habit, date)) continue;
+        total++;
+        const dateStr = date.toISOString().split('T')[0];
+        const hasCompletion = completions.some(
+          (c) => c.habit_id === habit.id && c.completed_at.startsWith(dateStr),
+        );
+        if (hasCompletion) completed++;
+      }
+      return {
+        date,
+        rate: total > 0 ? completed / total : 0,
+        completed,
+        total,
+      };
+    });
+  }, [habits, completions, daysBack]);
 }

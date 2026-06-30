@@ -13,7 +13,7 @@ export function SummaryCards() {
   return (
     <div className="grid grid-cols-3 gap-3">
       <div className="rounded-[10px] bg-card p-4 text-center">
-        <p className="text-[22px] font-bold text-[#5AC8FA]">{currentStreak}</p>
+        <p className="text-[22px] font-bold text-accent">{currentStreak}</p>
         <p className="text-[11px] text-text-secondary mt-1 font-medium">Current</p>
       </div>
       <div className="rounded-[10px] bg-card p-4 text-center">
@@ -21,7 +21,7 @@ export function SummaryCards() {
         <p className="text-[11px] text-text-secondary mt-1 font-medium">Best</p>
       </div>
       <div className="rounded-[10px] bg-card p-4 text-center">
-        <p className="text-[22px] font-bold text-[#3E6AE1]">{overallRate}%</p>
+        <p className="text-[22px] font-bold text-accent">{overallRate}%</p>
         <p className="text-[11px] text-text-secondary mt-1 font-medium">Rate</p>
       </div>
     </div>

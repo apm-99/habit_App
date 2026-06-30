@@ -63,23 +63,23 @@ export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectD
             >
               <div className="relative w-[42px] h-[42px] flex items-center justify-center">
                 {isSelected && (
-                  <div className="absolute inset-0 rounded-full bg-[#3E6AE1]/15 border border-[#3E6AE1]/40 pointer-events-none transition-all duration-200 ease-decelerate" />
+                  <div className="absolute inset-0 rounded-full bg-accent/15 border border-accent/40 pointer-events-none transition-all duration-200 ease-decelerate" />
                 )}
                 {dayIsToday && (
-                  <div className="absolute inset-0 rounded-full border-2 border-[#007AFF] pointer-events-none transition-all duration-200 ease-decelerate" style={isSelected ? { borderColor: '#007AFF' } : undefined} />
+                  <div className="absolute inset-0 rounded-full border-2 border-accent pointer-events-none transition-all duration-200 ease-decelerate" style={isSelected ? { borderColor: '#FF6B4A' } : undefined} />
                 )}
                 {pct > 0 ? (
                   <svg className="w-[36px] h-[36px]" viewBox="0 0 42 42">
                     <circle cx="21" cy="21" r="17" fill="none" stroke="#38383A" strokeWidth="2.5" />
                     <circle
-                      cx="21" cy="21" r="17" fill="none" stroke="#3E6AE1" strokeWidth="2.5"
+                      cx="21" cy="21" r="17" fill="none"                       stroke="#FF6B4A" strokeWidth="2.5"
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 17}`}
                       strokeDashoffset={`${2 * Math.PI * 17 * (1 - Math.min(pct, 1))}`}
                       transform="rotate(-90 21 21)"
                       style={{ transition: 'stroke-dashoffset 0.4s var(--ease-smooth)' }}
                     />
-                    <text x="21" y="21" textAnchor="middle" dominantBaseline="central" fill="#3E6AE1" fontSize="12" fontWeight="600" fontFamily="-apple-system, system-ui, sans-serif">
+                    <text x="21" y="21" textAnchor="middle" dominantBaseline="central" fill="#FF6B4A" fontSize="12" fontWeight="600" fontFamily="-apple-system, system-ui, sans-serif">
                       {Math.round(pct * 100)}
                     </text>
                   </svg>
@@ -89,7 +89,7 @@ export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectD
                   </div>
                 )}
               </div>
-              <span className={`text-[11px] text-center transition-colors duration-150 ${dayIsToday ? 'font-semibold text-[#007AFF]' : isSelected ? 'font-medium text-text-secondary' : 'text-muted'}`}>
+              <span className={`text-[11px] text-center transition-colors duration-150 ${dayIsToday ? 'font-semibold text-accent' : isSelected ? 'font-medium text-text-secondary' : 'text-muted'}`}>
                 {dayLabels[i]}
               </span>
             </button>
@@ -98,7 +98,7 @@ export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectD
       </div>
         <div className="flex items-center justify-center gap-1.5 mt-[10px]">
           <div className="h-[3px] flex-1 max-w-[120px] rounded-full bg-border overflow-hidden">
-            <div className="h-full rounded-full bg-[#3E6AE1] transition-all duration-500 ease-smooth" style={{ width: `${weekPct}%` }} />
+            <div className="h-full rounded-full bg-accent transition-all duration-500 ease-smooth" style={{ width: `${weekPct}%` }} />
           </div>
           <span className="text-[11px] font-medium text-text-secondary">{weekPct}%</span>
         </div>

@@ -10,8 +10,8 @@ function getIntensityColor(completed: number, total: number): string {
   const ratio = completed / total;
   if (ratio === 1) return 'bg-[#34C759]';
   if (ratio >= 0.66) return 'bg-[#34C759]/70';
-  if (ratio >= 0.33) return 'bg-[#007AFF]/50';
-  return 'bg-[#007AFF]/25';
+  if (ratio >= 0.33) return 'bg-accent/50';
+  return 'bg-accent/25';
 }
 
 export function MonthlyCalendar() {
@@ -57,7 +57,7 @@ export function MonthlyCalendar() {
           return (
             <div
               key={day}
-              className={`aspect-square rounded-md flex items-center justify-center text-[12px] ${getIntensityColor(completed, total)} ${isToday ? 'ring-[1.5px] ring-[#007AFF]' : ''}`}
+               className={`aspect-square rounded-md flex items-center justify-center text-[12px] ${getIntensityColor(completed, total)} ${isToday ? 'ring-[1.5px] ring-accent' : ''}`}
             >
               <span className={`font-medium ${total > 0 ? 'text-white' : 'text-[#48484A]'}`}>{day}</span>
             </div>

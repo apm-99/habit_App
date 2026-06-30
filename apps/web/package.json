@@ -24,6 +24,7 @@
     "@tanstack/react-query-persist-client": "^5.50.0",
     "@use-gesture/react": "^10.3.0",
     "date-fns": "^3.6.0",
+    "framer-motion": "^12.42.0",
     "lucide-react": "^0.400.0",
     "next": "^14.2.0",
     "react": "^18.3.0",

@@ -28,11 +28,11 @@ export function BottomNav() {
               <Icon
                 size={22}
                 strokeWidth={isActive ? 2.5 : 1.5}
-                className={isActive ? 'text-[#007AFF]' : 'text-[#8E8E93]'}
+                className={isActive ? 'text-accent' : 'text-[#8E8E93]'}
               />
               <span
                 className={`text-[10px] ${
-                  isActive ? 'text-[#007AFF] font-semibold' : 'text-[#8E8E93]'
+                   isActive ? 'text-accent font-semibold' : 'text-[#8E8E93]'
                 }`}
               >
                 {label}

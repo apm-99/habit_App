@@ -86,8 +86,8 @@ export default function SettingsPage() {
         <div className="rounded-xl bg-[#1C1C1E] overflow-hidden mt-4">
           <div className="flex items-center justify-between px-4 py-3.5">
             <div className="flex items-center gap-3">
-              <div className="w-[26px] h-[26px] rounded-full bg-[#007AFF]/20 flex items-center justify-center">
-                {darkMode ? <Moon size={14} className="text-[#007AFF]" /> : <Sun size={14} className="text-[#007AFF]" />}
+              <div className="w-[26px] h-[26px] rounded-full bg-accent/20 flex items-center justify-center">
+                {darkMode ? <Moon size={14} className="text-accent" /> : <Sun size={14} className="text-accent" />}
               </div>
               <span className="text-[15px] text-text-primary font-medium">Dark Mode</span>
             </div>
