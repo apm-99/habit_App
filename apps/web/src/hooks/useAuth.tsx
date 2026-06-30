@@ -14,7 +14,7 @@ interface AuthContextValue {
   error: string | null;
   retry: () => void;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<{ user: import('@supabase/supabase-js').User | null; session: import('@supabase/supabase-js').Session | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextValue>({
   error: null,
   retry: () => {},
   signIn: async () => {},
-  signUp: async () => {},
+  signUp: async () => ({ user: null, session: null }),
   signOut: async () => {},
 });
 
@@ -90,9 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [updateSession]);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    await authSignUp(email, password);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) updateSession(session);
+    const result = await authSignUp(email, password);
+    if (result.session) updateSession(result.session);
+    return result;
   }, [updateSession]);
 
   const signOut = useCallback(async () => {

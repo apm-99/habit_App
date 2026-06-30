@@ -36,6 +36,7 @@ Run a single test file: `pnpm --filter=web vitest run src/test/<file>.test.ts`
 
 - **Build/Types order**: `turbo.json` declares `typecheck` depends on `^build` — so first build dependencies, then typecheck. CI runs: typecheck → lint → test → build on `--filter=web`.
 - **Env required**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Placeholder values let the app start but Supabase calls will fail.
+- **Supabase Auth**: Email confirmation must be **disabled** in the Supabase project (Authentication → Settings → "Confirm email" OFF). The app uses anonymous auth and has no email infrastructure. If enabled, `signUp` works but returns no session, and `signIn` returns "Email not confirmed".
 - **`.env.local`** is gitignored — never commit secrets. Example at `apps/web/.env.example`.
 - **Vercel build** defined in root `vercel.json` uses custom `buildCommand: "cd apps/web && pnpm exec next build"` with `outputDirectory: "apps/web/.next"`. DON'T use `npx --no-install next build` — pnpm hoists binaries to root `node_modules/.bin`, not under `apps/web/`. DON'T set `rootDirectory` in vercel.json (it's dashboard-only).
 - **Service Worker**: Serwist PWA. Source at `src/app/sw.ts`, compiled to `public/sw.js`. Offline fallback page at `/~offline`.

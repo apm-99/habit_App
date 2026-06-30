@@ -24,13 +24,18 @@ export default function LoginPage() {
 
     try {
       if (mode === 'signup') {
-        await signUp(email, password);
-        setSuccess('Account created! You are now signed in with your email.');
+        const result = await signUp(email, password);
+        if (result.session) {
+          setSuccess('Account created! You are now signed in with your email.');
+          setTimeout(() => router.push('/'), 1500);
+        } else {
+          setSuccess('Account created! Check your email for a confirmation link to complete sign-up.');
+        }
       } else {
         await signIn(email, password);
         setSuccess('Signed in successfully.');
+        setTimeout(() => router.push('/'), 1500);
       }
-      setTimeout(() => router.push('/'), 1500);
     } catch (err) {
       setError((err as Error).message);
     } finally {

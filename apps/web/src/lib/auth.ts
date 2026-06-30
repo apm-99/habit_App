@@ -19,6 +19,13 @@ export async function signUp(email: string, password: string) {
   if (error) throw error;
   if (!data.user) throw new Error('Sign-up failed');
 
+  if (!data.session) {
+    // Email confirmation is required in the Supabase project settings.
+    // To fix this, go to your Supabase dashboard → Authentication → Settings
+    // and disable "Confirm email". This app has no email infrastructure set up.
+    return { user: data.user, session: null };
+  }
+
   if (oldUserId && oldUserId !== data.user.id) {
     try {
       await supabase.rpc('migrate_user_data', {
@@ -30,7 +37,7 @@ export async function signUp(email: string, password: string) {
     }
   }
 
-  return data;
+  return { user: data.user, session: data.session };
 }
 
 export async function signIn(email: string, password: string) {

@@ -1,22 +1,12 @@
 'use client';
 
-import { format, isToday } from 'date-fns';
-import { useHabits } from '@/hooks/useHabits';
 import { useDailyRates, useStreaks } from '@/hooks/useStats';
-import { isScheduledToday } from '@/lib/schedule';
 
 export function StreakChart() {
-  const { data: habits } = useHabits();
   const dailyRates = useDailyRates(30);
   const streaks = useStreaks();
 
-  if (!dailyRates || !streaks || !habits) return null;
-
-  const today = new Date();
-  const scheduledToday = habits.filter((h) => isScheduledToday(h, today));
-  const todayData = dailyRates.find((d) => isToday(d.date));
-  const completedToday = todayData?.completed ?? 0;
-  const totalToday = todayData?.total ?? 0;
+  if (!dailyRates || !streaks) return null;
 
   const overallRate30 = dailyRates.length > 0
     ? Math.round(
@@ -53,24 +43,13 @@ export function StreakChart() {
     : '';
 
   return (
-    <div className="rounded-2xl bg-surface-card border border-surface-border p-5">
-      <p className="text-xs text-tertiary uppercase tracking-wide font-medium mb-1">
-        Routines
-      </p>
-      <p className="text-sm text-text-secondary mb-4">
-        {scheduledToday.length > 0
-          ? `${completedToday}/${totalToday} today \u00B7 ${format(today, 'EEEE, MMMM d')}`
-          : `No habits today \u00B7 ${format(today, 'EEEE, MMMM d')}`}
-      </p>
-
-      <div className="h-px bg-surface-border mb-5" />
-
-      <div className="flex items-end justify-between gap-4">
+    <div className="rounded-xl bg-surface-card border border-surface-border p-4 mb-6">
+      <div className="flex items-center justify-between gap-4">
         <div className="shrink-0">
-          <p className="text-4xl font-bold text-text-primary leading-none tracking-tight">
+          <p className="text-3xl font-bold text-text-primary leading-none tracking-tight">
             {overallRate30}%
           </p>
-          <p className="text-[11px] text-tertiary uppercase tracking-wide font-medium mt-1.5">
+          <p className="text-[11px] text-tertiary uppercase tracking-wide font-medium mt-1">
             30-day rate
           </p>
         </div>
@@ -79,17 +58,17 @@ export function StreakChart() {
           {points.length > 1 && (
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              className="w-full h-9"
+              className="w-full h-8"
               preserveAspectRatio="none"
             >
               <defs>
                 <linearGradient id="sparkline-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FF6B4A" stopOpacity={0.15} />
+                  <stop offset="0%" stopColor="#FF6B4A" stopOpacity={0.08} />
                   <stop offset="100%" stopColor="#FF6B4A" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <path d={areaPath} fill="url(#sparkline-fill)" />
-              <path d={linePath} fill="none" stroke="#FF6B4A" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+              <path d={linePath} fill="none" stroke="#FF6B4A" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </div>

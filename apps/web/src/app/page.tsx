@@ -6,10 +6,13 @@ import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
 import { DateHeader } from '@/components/DateHeader';
+import { StreakChart } from '@/components/StreakChart';
 import { useHabits, useCompletions, useToggleCompletion, useCreateHabit, useUpdateHabit, useDeleteHabit, useWeekCompletions } from '@/hooks/useHabits';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { isScheduledToday } from '@/lib/schedule';
 import type { CreateHabitInput, Habit } from '@repo/db';
+import Link from 'next/link';
 import { format, addDays, subDays, isToday, getDayOfYear, getDaysInYear } from 'date-fns';
 
 export default function TodayPage() {
@@ -32,6 +35,7 @@ export default function TodayPage() {
   const createHabit = useCreateHabit();
   const updateHabit = useUpdateHabit();
   const deleteHabit = useDeleteHabit();
+  const { userEmail, isAnonymous } = useAuth();
 
   const completedIds = useMemo(
     () => new Set(completions?.map((c) => c.habit_id) ?? []),
@@ -132,14 +136,28 @@ export default function TodayPage() {
           <h1 className="text-[36px] font-[500] tracking-[-0.02em] text-text-primary leading-tight">
             {isCurrentDay ? 'Today' : format(selectedDate, 'EEEE')}
           </h1>
-          {!isCurrentDay && mounted && (
-            <button
-              onClick={goToToday}
-              className="text-[15px] text-accent font-[500] active:opacity-50 transition-opacity"
+          <div className="flex items-center gap-3">
+            {!isCurrentDay && mounted && (
+              <button
+                onClick={goToToday}
+                className="text-[15px] text-accent font-[500] active:opacity-50 transition-opacity"
+              >
+                Today
+              </button>
+            )}
+            <Link
+              href="/settings"
+              className="w-[32px] h-[32px] rounded-full bg-surface-card border border-surface-border flex items-center justify-center active:opacity-50 transition-opacity"
             >
-              Today
-            </button>
-          )}
+              {isAnonymous ? (
+                <User size={16} className="text-text-secondary" />
+              ) : (
+                <span className="text-[13px] font-medium text-accent">
+                  {userEmail?.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
         <div className="flex items-center gap-2 mt-0.5 mb-5">
           <p className="text-[15px] text-text-secondary">{mounted ? dayLabel : ''}</p>
@@ -160,6 +178,8 @@ export default function TodayPage() {
             </button>
           </div>
         </div>
+
+        <StreakChart />
 
         <DateHeader
           selectedDate={selectedDate}
