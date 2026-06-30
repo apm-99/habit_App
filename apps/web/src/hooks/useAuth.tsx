@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { ensureAnonymousSession, signIn as authSignIn, signUp as authSignUp, signOut as authSignOut } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
@@ -35,7 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const retryCountRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const updateSession = useCallback((session: import('@supabase/supabase-js').Session | null) => {
     if (session) {
@@ -56,23 +57,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           updateSession(session);
         }
         setLoading(false);
-        setRetryCount(0);
+        retryCountRef.current = 0;
       })
       .catch((err) => {
         const message = (err as Error).message || 'Authentication failed';
         console.error('Auth init failed:', err);
         setError(message);
         setLoading(false);
-        if (retryCount < RETRY_DELAYS.length) {
-          const delay = RETRY_DELAYS[retryCount];
-          setRetryCount((c) => c + 1);
-          setTimeout(init, delay);
+        if (retryCountRef.current < RETRY_DELAYS.length) {
+          const delay = RETRY_DELAYS[retryCountRef.current];
+          retryCountRef.current += 1;
+          timerRef.current = setTimeout(init, delay);
         }
       });
-  }, [retryCount, updateSession]);
+  }, [updateSession]);
 
   useEffect(() => {
     init();
+    return () => clearTimeout(timerRef.current);
   }, [init]);
 
   useEffect(() => {
