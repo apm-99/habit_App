@@ -6,10 +6,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useYearlyData } from '@/hooks/useStats';
 
 function getHeatmapColor(completed: number, total: number): string {
-  if (total === 0 || completed === 0) return 'bg-[#2C2C2E]/40';
+  if (total === 0 || completed === 0) return 'bg-surface-elevated/40';
   const ratio = completed / total;
-  if (ratio === 1) return 'bg-[#34C759]';
-  if (ratio >= 0.66) return 'bg-[#34C759]/60';
+  if (ratio === 1) return 'bg-success';
+  if (ratio >= 0.66) return 'bg-success/60';
   if (ratio >= 0.33) return 'bg-accent/40';
   return 'bg-accent/20';
 }
@@ -36,13 +36,13 @@ export function YearlyHeatmap() {
   const today = new Date();
 
   return (
-    <div className="rounded-xl bg-[#1C1C1E] p-4">
+    <div className="rounded-xl bg-surface-card p-4">
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setYear((y) => y - 1)} className="w-7 h-7 rounded-full flex items-center justify-center active:bg-[#2C2C2E] transition-colors">
+        <button onClick={() => setYear((y) => y - 1)} className="w-7 h-7 rounded-full flex items-center justify-center active:bg-surface-elevated transition-colors">
           <ChevronLeft size={16} className="text-text-secondary" />
         </button>
         <h3 className="text-[13px] font-semibold text-text-primary">{year}</h3>
-        <button onClick={() => setYear((y) => y + 1)} className="w-7 h-7 rounded-full flex items-center justify-center active:bg-[#2C2C2E] transition-colors">
+        <button onClick={() => setYear((y) => y + 1)} className="w-7 h-7 rounded-full flex items-center justify-center active:bg-surface-elevated transition-colors">
           <ChevronRight size={16} className="text-text-secondary" />
         </button>
       </div>
@@ -50,7 +50,7 @@ export function YearlyHeatmap() {
       <div className="flex gap-[2px]">
         <div className="flex flex-col gap-[2px] mr-1 justify-between">
           {['Mon', '', 'Wed', '', 'Fri', '', ''].map((l, i) => (
-            <div key={i} className="text-[8px] text-[#48484A] h-[10px] leading-[10px]">{l}</div>
+            <div key={i} className="text-[8px] text-tertiary h-[10px] leading-[10px]">{l}</div>
           ))}
         </div>
         <div className="flex-1 overflow-x-auto">
@@ -77,13 +77,13 @@ export function YearlyHeatmap() {
       </div>
 
       <div className="flex items-center justify-end gap-[3px] mt-2">
-        <span className="text-[9px] text-[#48484A]">Less</span>
-        <div className="w-[10px] h-[10px] rounded-[2px] bg-[#2C2C2E]/40" />
+        <span className="text-[9px] text-tertiary">Less</span>
+        <div className="w-[10px] h-[10px] rounded-[2px] bg-surface-elevated/40" />
         <div className="w-[10px] h-[10px] rounded-[2px] bg-accent/20" />
         <div className="w-[10px] h-[10px] rounded-[2px] bg-accent/40" />
-        <div className="w-[10px] h-[10px] rounded-[2px] bg-[#34C759]/60" />
-        <div className="w-[10px] h-[10px] rounded-[2px] bg-[#34C759]" />
-        <span className="text-[9px] text-[#48484A]">More</span>
+        <div className="w-[10px] h-[10px] rounded-[2px] bg-success/60" />
+        <div className="w-[10px] h-[10px] rounded-[2px] bg-success" />
+        <span className="text-[9px] text-tertiary">More</span>
       </div>
     </div>
   );

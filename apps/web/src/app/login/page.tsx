@@ -1,10 +1,37 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+function friendlyError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('invalid login credentials') || lower.includes('invalid email or password')) {
+    return 'Incorrect email or password. Please try again.';
+  }
+  if (lower.includes('user not found')) {
+    return 'No account found with this email.';
+  }
+  if (lower.includes('email already registered') || lower.includes('already been registered')) {
+    return 'An account with this email already exists.';
+  }
+  if (lower.includes('password should be at least')) {
+    return 'Password must be at least 6 characters.';
+  }
+  if (lower.includes('unable to validate email address')) {
+    return 'Please enter a valid email address.';
+  }
+  if (lower.includes('rate limit')) {
+    return 'Too many attempts. Please wait a moment and try again.';
+  }
+  if (lower.includes('network') || lower.includes('fetch')) {
+    return 'Connection error. Check your internet and try again.';
+  }
+  return 'Something went wrong. Please try again.';
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,9 +39,33 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword((prev) => {
+      const next = !prev;
+      requestAnimationFrame(() => {
+        const input = passwordRef.current;
+        if (input) {
+          const len = input.value.length;
+          input.setSelectionRange(len, len);
+          input.focus();
+        }
+      });
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,18 +77,18 @@ export default function LoginPage() {
       if (mode === 'signup') {
         const result = await signUp(email, password);
         if (result.session) {
-          setSuccess('Account created! You are now signed in with your email.');
-          setTimeout(() => router.push('/'), 1500);
+          setSuccess('Account created! Signing you in...');
+          setTimeout(() => router.push('/'), 1200);
         } else {
-          setSuccess('Account created! Check your email for a confirmation link to complete sign-up.');
+          setSuccess('Account created! Check your email for a confirmation link.');
         }
       } else {
         await signIn(email, password);
-        setSuccess('Signed in successfully.');
-        setTimeout(() => router.push('/'), 1500);
+        setSuccess('Signed in!');
+        setTimeout(() => router.push('/'), 800);
       }
     } catch (err) {
-      setError((err as Error).message);
+      setError(friendlyError((err as Error).message));
     } finally {
       setSubmitting(false);
     }
@@ -46,7 +97,7 @@ export default function LoginPage() {
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
-        <p className="text-text-secondary">Loading...</p>
+        <Loader2 size={24} className="text-accent animate-spin" />
       </div>
     );
   }
@@ -70,7 +121,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background px-6 pt-14 pb-24">
       <Link
         href="/"
-        className="inline-flex items-center gap-1 text-[15px] text-accent font-[500] active:opacity-50 transition-opacity mb-8"
+        className="inline-flex items-center gap-1.5 text-[15px] text-accent font-[500] active:opacity-50 transition-opacity mb-8"
       >
         <ArrowLeft size={18} />
         Back
@@ -94,10 +145,12 @@ export default function LoginPage() {
             id="email"
             type="email"
             required
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full h-[44px] rounded-[10px] bg-card border border-border px-3.5 text-[15px] text-text-primary placeholder:text-[#666668] outline-none focus:border-accent transition-colors"
+            disabled={submitting}
+            className="w-full h-[44px] rounded-[10px] bg-card border border-border px-3.5 text-[15px] text-text-primary placeholder:text-muted outline-none focus:border-accent transition-colors disabled:opacity-50"
           />
         </div>
 
@@ -105,32 +158,98 @@ export default function LoginPage() {
           <label htmlFor="password" className="text-[13px] font-[500] text-text-secondary block mb-1.5">
             Password
           </label>
-          <input
-            id="password"
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 6 characters"
-            className="w-full h-[44px] rounded-[10px] bg-card border border-border px-3.5 text-[15px] text-text-primary placeholder:text-[#666668] outline-none focus:border-accent transition-colors"
-          />
+          <div className="relative">
+            <input
+              ref={passwordRef}
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              required
+              minLength={6}
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              disabled={submitting}
+              className="w-full h-[44px] rounded-[10px] bg-card border border-border px-3.5 pr-11 text-[15px] text-text-primary placeholder:text-muted outline-none focus:border-accent transition-colors disabled:opacity-50"
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              tabIndex={-1}
+              className="absolute right-0 top-0 h-[44px] w-[44px] flex items-center justify-center text-text-secondary active:opacity-50 transition-opacity"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                {showPassword ? (
+                  <motion.div
+                    key="off"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <EyeOff size={18} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="on"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <Eye size={18} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
+          </div>
         </div>
 
-        {error && (
-          <p className="text-[13px] text-red-500 bg-red-500/10 rounded-[8px] px-3 py-2">{error}</p>
-        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -4, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -4, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="text-[13px] text-destructive bg-destructive/10 rounded-[10px] px-3.5 py-2.5 flex items-start gap-2">
+                <span className="shrink-0 mt-px">!</span>
+                <span>{error}</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {success && (
-          <p className="text-[13px] text-green-500 bg-green-500/10 rounded-[8px] px-3 py-2">{success}</p>
-        )}
+        <AnimatePresence>
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: -4, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -4, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="text-[13px] text-success bg-success/10 rounded-[10px] px-3.5 py-2.5">
+                {success}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <button
           type="submit"
-          disabled={submitting}
-          className="w-full h-[44px] rounded-[10px] bg-accent text-white text-[15px] font-[500] active:opacity-70 transition-opacity disabled:opacity-50"
+          disabled={submitting || !email.trim() || password.length < 6}
+          className="w-full h-[44px] rounded-[10px] bg-accent text-white text-[15px] font-[500] active:opacity-70 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {submitting ? 'Please wait...' : mode === 'signin' ? 'Sign In' : 'Create Account'}
+          {submitting ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              <span>{mode === 'signin' ? 'Signing in...' : 'Creating account...'}</span>
+            </>
+          ) : (
+            mode === 'signin' ? 'Sign In' : 'Create Account'
+          )}
         </button>
       </form>
 
@@ -140,7 +259,7 @@ export default function LoginPage() {
             Don&apos;t have an account?{' '}
             <button
               onClick={() => { setMode('signup'); setError(null); setSuccess(null); }}
-              className="text-accent font-[500] bg-none border-none p-0 cursor-pointer"
+              className="text-accent font-[500] bg-none border-none p-0 cursor-pointer active:opacity-50 transition-opacity"
             >
               Create one
             </button>
@@ -150,7 +269,7 @@ export default function LoginPage() {
             Already have an account?{' '}
             <button
               onClick={() => { setMode('signin'); setError(null); setSuccess(null); }}
-              className="text-accent font-[500] bg-none border-none p-0 cursor-pointer"
+              className="text-accent font-[500] bg-none border-none p-0 cursor-pointer active:opacity-50 transition-opacity"
             >
               Sign in
             </button>

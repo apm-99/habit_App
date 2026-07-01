@@ -15,7 +15,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 ios-blur border-t border-[#38383A]/50 safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 ios-blur border-t border-surface-border safe-bottom">
       <div className="flex justify-around items-center h-[50px] max-w-lg mx-auto">
         {tabs.map(({ href, label, Icon }) => {
           const isActive = pathname === href;
@@ -29,11 +29,11 @@ export function BottomNav() {
               <Icon
                 size={22}
                 strokeWidth={isActive ? 2.5 : 1.5}
-                className={isActive ? 'text-accent' : 'text-[#8E8E93]'}
+                className={isActive ? 'text-accent' : 'text-muted'}
               />
               <span
                 className={`text-[10px] ${
-                   isActive ? 'text-accent font-semibold' : 'text-[#8E8E93]'
+                   isActive ? 'text-accent font-semibold' : 'text-muted'
                 }`}
               >
                 {label}

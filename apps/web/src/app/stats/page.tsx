@@ -5,6 +5,8 @@ import { useHabits } from '@/hooks/useHabits';
 import { SummaryCards } from '@/components/SummaryCards';
 import { MonthlyCalendar } from '@/components/MonthlyCalendar';
 import { YearlyHeatmap } from '@/components/YearlyHeatmap';
+import { EmptyState } from '@/components/EmptyState';
+import { BarChart3 } from 'lucide-react';
 
 export default function StatsPage() {
   const { data: habits, isLoading } = useHabits();
@@ -19,17 +21,18 @@ export default function StatsPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 rounded-[10px] bg-card animate-pulse" />
+                <div key={i} className="h-20 rounded-[10px] bg-surface-card animate-pulse" />
               ))}
             </div>
-            <div className="h-64 rounded-[10px] bg-card animate-pulse" />
-            <div className="h-40 rounded-[10px] bg-card animate-pulse" />
+            <div className="h-64 rounded-[10px] bg-surface-card animate-pulse" />
+            <div className="h-40 rounded-[10px] bg-surface-card animate-pulse" />
           </div>
         ) : !habits || habits.length === 0 ? (
-          <div className="text-center pt-20">
-            <h2 className="text-[22px] font-[400] tracking-[-0.01em] text-text-primary">No data yet</h2>
-            <p className="text-[15px] text-text-secondary mt-2.5">Start completing habits to see your stats.</p>
-          </div>
+          <EmptyState
+            icon={<BarChart3 size={28} className="text-accent" />}
+            title="No data yet"
+            description="Start completing habits to see your stats."
+          />
         ) : (
           <div className="space-y-6">
             <SummaryCards />

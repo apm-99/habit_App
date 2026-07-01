@@ -12,15 +12,15 @@ export function SummaryCards() {
 
   return (
     <div className="grid grid-cols-3 gap-3">
-      <div className="rounded-[10px] bg-card p-4 text-center">
+      <div className="rounded-[10px] bg-surface-card p-4 text-center">
         <p className="text-[22px] font-bold text-accent">{currentStreak}</p>
         <p className="text-[11px] text-text-secondary mt-1 font-medium">Current</p>
       </div>
-      <div className="rounded-[10px] bg-card p-4 text-center">
-        <p className="text-[22px] font-bold text-[#30D158]">{longestStreak}</p>
+      <div className="rounded-[10px] bg-surface-card p-4 text-center">
+        <p className="text-[22px] font-bold text-success">{longestStreak}</p>
         <p className="text-[11px] text-text-secondary mt-1 font-medium">Best</p>
       </div>
-      <div className="rounded-[10px] bg-card p-4 text-center">
+      <div className="rounded-[10px] bg-surface-card p-4 text-center">
         <p className="text-[22px] font-bold text-accent">{overallRate}%</p>
         <p className="text-[11px] text-text-secondary mt-1 font-medium">Rate</p>
       </div>

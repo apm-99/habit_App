@@ -5,8 +5,9 @@ import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
 import { UndoToast } from '@/components/UndoToast';
+import { EmptyState } from '@/components/EmptyState';
 import { useHabits, useCreateHabit, useUpdateHabit, useUndoDeleteHabit } from '@/hooks/useHabits';
-import { Plus } from 'lucide-react';
+import { Plus, ListChecks } from 'lucide-react';
 import type { CreateHabitInput, Habit } from '@repo/db';
 
 export default function HabitsPage() {
@@ -56,7 +57,7 @@ export default function HabitsPage() {
         {isLoading ? (
           <div className="space-y-[10px]">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[52px] rounded-[10px] bg-card animate-pulse" />
+              <div key={i} className="h-[52px] rounded-[10px] bg-surface-card animate-pulse" />
             ))}
           </div>
         ) : habits && habits.length > 0 ? (
@@ -71,15 +72,12 @@ export default function HabitsPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center pt-20">
-            <h2 className="text-[22px] font-[400] tracking-[-0.01em] text-text-primary">No habits yet</h2>
-            <button
-              onClick={() => setShowForm(true)}
-              className="mt-4 text-accent text-[15px] font-semibold active:opacity-70 transition-opacity"
-            >
-              Create your first habit
-            </button>
-          </div>
+          <EmptyState
+            icon={<ListChecks size={28} className="text-accent" />}
+            title="No habits yet"
+            description="Create your first habit to start tracking."
+            action={{ label: 'Create Habit', onClick: () => setShowForm(true) }}
+          />
         )}
       </div>
 

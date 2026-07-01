@@ -8,6 +8,16 @@ import { format, addDays } from 'date-fns';
 import { enqueue } from '@/lib/sync-queue';
 import type { Todo, CreateTodoInput, UpdateTodoInput } from '@repo/db';
 
+let monotonicCounter = 0;
+
+function stableCreatedAtIndex(): string {
+  monotonicCounter += 1;
+  const now = Date.now();
+  const ms = String(now % 1000).padStart(3, '0');
+  const sec = Math.floor(now / 1000);
+  return `${new Date(sec * 1000).toISOString().replace('Z', '')}${ms.slice(0, 2)}${String(monotonicCounter % 100).padStart(2, '0')}Z`;
+}
+
 export function useTodos() {
   const userId = useUserId();
   return useQuery({
@@ -18,7 +28,8 @@ export function useTodos() {
         .from('todos')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
@@ -53,7 +64,7 @@ export function useCreateTodo() {
         priority: input.priority ?? 0,
         category: input.category ?? '',
         completed: false,
-        created_at: new Date().toISOString(),
+        created_at: stableCreatedAtIndex(),
         updated_at: new Date().toISOString(),
         user_id: userId,
       };
@@ -167,7 +178,11 @@ export function useDeleteTodo() {
       queryClient.setQueryData<Todo[]>(['todos', userId], (old) => {
         if (!old) return [todo];
         if (old.some((t) => t.id === key)) return old;
-        return [...old, todo].sort((a, b) => b.created_at.localeCompare(a.created_at));
+        const insertAt = old.findIndex((t) => t.created_at < todo.created_at);
+        if (insertAt === -1) return [...old, todo];
+        const next = [...old];
+        next.splice(insertAt, 0, todo);
+        return next;
       });
     },
     [queryClient, userId],

@@ -6,6 +6,7 @@ import { AppShell } from '@/components/AppShell';
 import { TodoCard } from '@/components/TodoCard';
 import { TodoForm } from '@/components/TodoForm';
 import { UndoToast } from '@/components/UndoToast';
+import { EmptyState } from '@/components/EmptyState';
 import {
   useTodos,
   useCreateTodo,
@@ -16,28 +17,6 @@ import {
 import { Plus, ChevronDown, CheckCircle2, ListTodo, Sunrise, Sunset } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import type { CreateTodoInput, Todo } from '@repo/db';
-
-function EmptyState({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="text-center pt-16 pb-8">
-      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-card border border-surface-border flex items-center justify-center">
-        <ListTodo size={28} className="text-accent" />
-      </div>
-      <h2 className="text-[22px] font-[400] tracking-[-0.01em] text-text-primary">
-        No tasks for today
-      </h2>
-      <p className="text-[15px] text-text-secondary mt-2.5 max-w-[280px] mx-auto leading-relaxed">
-        Add your first task above to get started.
-      </p>
-      <button
-        onClick={onAdd}
-        className="mt-4 border border-text-secondary/50 rounded-[20px] px-6 py-2.5 text-[15px] text-text-primary active:opacity-50 transition-opacity"
-      >
-        Add Task
-      </button>
-    </div>
-  );
-}
 
 function SectionHeader({
   icon: Icon,
@@ -234,7 +213,12 @@ export default function TodosPage() {
             ))}
           </div>
         ) : !hasAnyTodos ? (
-          <EmptyState onAdd={() => setShowForm(true)} />
+          <EmptyState
+            icon={<ListTodo size={28} className="text-accent" />}
+            title="No tasks yet"
+            description="Add your first task above to get started."
+            action={{ label: 'Add Task', onClick: () => setShowForm(true) }}
+          />
         ) : (
           <div className="space-y-6">
             {todayTodos.length > 0 && (

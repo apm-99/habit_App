@@ -8,8 +8,9 @@ import { HabitForm } from '@/components/HabitForm';
 import { DateHeader } from '@/components/DateHeader';
 import { StreakChart } from '@/components/StreakChart';
 import { UndoToast } from '@/components/UndoToast';
+import { EmptyState } from '@/components/EmptyState';
 import { useHabits, useCompletions, useToggleCompletion, useCreateHabit, useUpdateHabit, useUndoDeleteHabit, useWeekCompletions } from '@/hooks/useHabits';
-import { Plus, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, User, CalendarCheck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { isScheduledToday } from '@/lib/schedule';
 import type { CreateHabitInput, Habit } from '@repo/db';
@@ -205,20 +206,12 @@ export default function TodayPage() {
             ))}
           </div>
         ) : todayHabits.length === 0 ? (
-          <div className="text-center pt-20">
-            <h2 className="text-[22px] font-[400] tracking-[-0.01em] text-text-primary">No habits scheduled</h2>
-            <p className="text-[15px] text-text-secondary mt-2.5 max-w-[280px] mx-auto leading-relaxed">
-              {isCurrentDay ? 'Create a habit to get started.' : 'No habits scheduled for this day.'}
-            </p>
-            {isCurrentDay && (
-              <button
-                onClick={() => setShowForm(true)}
-                className="mt-4 border border-text-secondary/50 rounded-[20px] px-6 py-2.5 text-[15px] text-text-primary active:opacity-50 transition-opacity"
-              >
-                Create Habit
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={<CalendarCheck size={28} className="text-accent" />}
+            title="No habits scheduled"
+            description={isCurrentDay ? 'Create a habit to get started.' : 'No habits scheduled for this day.'}
+            action={isCurrentDay ? { label: 'Create Habit', onClick: () => setShowForm(true) } : undefined}
+          />
         ) : (
           <>
             <div className="space-y-2">

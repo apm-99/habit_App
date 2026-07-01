@@ -20,7 +20,7 @@ export function StreakChart() {
 
   const rates = dailyRates.map((d) => d.rate);
   const svgWidth = 140;
-  const svgHeight = 36;
+  const svgHeight = 32;
   const padding = 0;
   const chartW = svgWidth - padding * 2;
   const chartH = svgHeight - padding * 2;
@@ -43,13 +43,13 @@ export function StreakChart() {
     : '';
 
   return (
-    <div className="rounded-xl bg-surface-card border border-surface-border p-4 mb-6">
+    <div className="rounded-xl bg-surface-card border border-surface-border px-4 py-3.5 mb-5">
       <div className="flex items-center justify-between gap-4">
         <div className="shrink-0">
-          <p className="text-3xl font-bold text-text-primary leading-none tracking-tight">
+          <p className="text-[22px] font-[600] text-text-primary leading-none tracking-[-0.02em]">
             {overallRate30}%
           </p>
-          <p className="text-[11px] text-tertiary uppercase tracking-wide font-medium mt-1">
+          <p className="text-[10px] text-tertiary uppercase tracking-[0.06em] font-medium mt-1">
             30-day rate
           </p>
         </div>
@@ -58,25 +58,24 @@ export function StreakChart() {
           {points.length > 1 && (
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              className="w-full h-8"
+              className="w-full h-7"
               preserveAspectRatio="none"
             >
               <defs>
                 <linearGradient id="sparkline-fill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FF6B4A" stopOpacity={0.08} />
+                  <stop offset="0%" stopColor="#FF6B4A" stopOpacity={0.06} />
                   <stop offset="100%" stopColor="#FF6B4A" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <path d={areaPath} fill="url(#sparkline-fill)" />
-              <path d={linePath} fill="none" stroke="#FF6B4A" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+              <path d={linePath} fill="none" stroke="#FF6B4A" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           )}
         </div>
 
         {maxStreak > 0 && (
           <div className="shrink-0 text-right">
-            <span className="text-sm">🔥</span>
-            <span className="text-sm text-text-secondary font-medium ml-1">{maxStreak} days</span>
+            <span className="text-[13px] text-text-secondary font-medium">{maxStreak}d streak</span>
           </div>
         )}
       </div>

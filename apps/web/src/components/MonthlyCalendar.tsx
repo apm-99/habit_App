@@ -6,10 +6,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMonthlyData } from '@/hooks/useStats';
 
 function getIntensityColor(completed: number, total: number): string {
-  if (total === 0 || completed === 0) return 'bg-[#2C2C2E]/50';
+  if (total === 0 || completed === 0) return 'bg-surface-elevated/50';
   const ratio = completed / total;
-  if (ratio === 1) return 'bg-[#34C759]';
-  if (ratio >= 0.66) return 'bg-[#34C759]/70';
+  if (ratio === 1) return 'bg-success';
+  if (ratio >= 0.66) return 'bg-success/70';
   if (ratio >= 0.33) return 'bg-accent/50';
   return 'bg-accent/25';
 }
@@ -28,13 +28,13 @@ export function MonthlyCalendar() {
   const today = new Date();
 
   return (
-    <div className="rounded-xl bg-[#1C1C1E] p-4">
+    <div className="rounded-xl bg-surface-card p-4">
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setCurrentDate((d) => subMonths(d, 1))} className="w-7 h-7 rounded-full flex items-center justify-center active:bg-[#2C2C2E] transition-colors">
+        <button onClick={() => setCurrentDate((d) => subMonths(d, 1))} className="w-7 h-7 rounded-full flex items-center justify-center active:bg-surface-elevated transition-colors">
           <ChevronLeft size={16} className="text-text-secondary" />
         </button>
         <h3 className="text-[13px] font-semibold text-text-primary">{format(currentDate, 'MMMM yyyy')}</h3>
-        <button onClick={() => setCurrentDate((d) => addMonths(d, 1))} className="w-7 h-7 rounded-full flex items-center justify-center active:bg-[#2C2C2E] transition-colors">
+        <button onClick={() => setCurrentDate((d) => addMonths(d, 1))} className="w-7 h-7 rounded-full flex items-center justify-center active:bg-surface-elevated transition-colors">
           <ChevronRight size={16} className="text-text-secondary" />
         </button>
       </div>
@@ -59,7 +59,7 @@ export function MonthlyCalendar() {
               key={day}
                className={`aspect-square rounded-md flex items-center justify-center text-[12px] ${getIntensityColor(completed, total)} ${isToday ? 'ring-[1.5px] ring-accent' : ''}`}
             >
-              <span className={`font-medium ${total > 0 ? 'text-white' : 'text-[#48484A]'}`}>{day}</span>
+              <span className={`font-medium ${total > 0 ? 'text-white' : 'text-tertiary'}`}>{day}</span>
             </div>
           );
         })}
