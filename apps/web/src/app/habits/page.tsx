@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
-import { useHabits, useCreateHabit, useUpdateHabit, useDeleteHabit } from '@/hooks/useHabits';
+import { UndoToast } from '@/components/UndoToast';
+import { useHabits, useCreateHabit, useUpdateHabit, useUndoDeleteHabit } from '@/hooks/useHabits';
 import { Plus } from 'lucide-react';
 import type { CreateHabitInput, Habit } from '@repo/db';
 
@@ -14,7 +15,8 @@ export default function HabitsPage() {
   const { data: habits, isLoading } = useHabits();
   const createHabit = useCreateHabit();
   const updateHabit = useUpdateHabit();
-  const deleteHabit = useDeleteHabit();
+  const { deleteHabit, undoDelete } = useUndoDeleteHabit();
+  const [deletedHabit, setDeletedHabit] = useState<Habit | undefined>(undefined);
 
   const handleSubmit = async (input: CreateHabitInput) => {
     if (editingHabit) {
@@ -26,9 +28,17 @@ export default function HabitsPage() {
     setEditingHabit(undefined);
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteHabit.mutateAsync(id);
-  };
+  const handleDelete = useCallback((habit: Habit) => {
+    setDeletedHabit(habit);
+    deleteHabit(habit);
+  }, [deleteHabit]);
+
+  const handleUndoDelete = useCallback(() => {
+    if (deletedHabit) {
+      undoDelete(deletedHabit);
+      setDeletedHabit(undefined);
+    }
+  }, [deletedHabit, undoDelete]);
 
   return (
     <AppShell>
@@ -56,7 +66,7 @@ export default function HabitsPage() {
                 key={habit.id}
                 habit={habit}
                 onClick={() => { setEditingHabit(habit); setShowForm(true); }}
-                onDelete={() => handleDelete(habit.id)}
+                onDelete={() => handleDelete(habit)}
               />
             ))}
           </div>
@@ -81,6 +91,14 @@ export default function HabitsPage() {
         saving={createHabit.isPending || updateHabit.isPending}
         error={createHabit.error ? (createHabit.error as Error).message : updateHabit.error ? (updateHabit.error as Error).message : null}
       />
+
+      {deletedHabit && (
+        <UndoToast
+          message={`"${deletedHabit.name}" deleted`}
+          onUndo={handleUndoDelete}
+          onDismiss={() => setDeletedHabit(undefined)}
+        />
+      )}
     </AppShell>
   );
 }

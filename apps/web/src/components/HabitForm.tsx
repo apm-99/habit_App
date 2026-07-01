@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { CreateHabitSchema } from '@repo/db';
@@ -82,6 +82,20 @@ export function HabitForm({ open, onClose, onSubmit, initial, error: submitError
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [showCustomize, setShowCustomize] = useState(!!initial);
+
+  useEffect(() => {
+    if (open) {
+      setName(initial?.name ?? '');
+      setDescription(initial?.description ?? '');
+      setSelectedEmoji(initial?.category ? CATEGORY_EMOJI_MAP[initial.category] || EMOJIS[0] : EMOJIS[0]);
+      setSelectedColor(initial?.category ? CATEGORY_COLOR_MAP[initial.category] || COLORS[0] : COLORS[0]);
+      setFrequencyType(initial?.frequency_type ?? 'daily');
+      setTargetCount(initial?.target_count ?? 1);
+      setCustomDays(initial?.custom_days ?? []);
+      setErrors({});
+      setShowCustomize(!!initial);
+    }
+  }, [open, initial]);
 
   const handleSubmit = async () => {
     const category = emojiToCategory(selectedEmoji);

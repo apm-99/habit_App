@@ -3,35 +3,28 @@
 import { useRef, useCallback, useState, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
-import type { Habit } from '@repo/db';
-import { getWeeklyScheduleDescription } from '@/lib/schedule';
+import { Flag } from 'lucide-react';
+import type { Todo } from '@repo/db';
 import { CompletionCheck } from './CompletionCheck';
 
-interface HabitCardProps {
-  habit: Habit;
-  completed?: boolean;
+interface TodoCardProps {
+  todo: Todo;
   onToggle?: () => void;
   onClick?: () => void;
-  showToggle?: boolean;
   onDelete?: () => void;
-  weeklyProgress?: { completed: number; target: number };
 }
 
 const SWIPE_THRESHOLD = 80;
 const LONG_PRESS_MS = 500;
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  health: '\u{2764}\u{FE0F}',
-  fitness: '\u{1F3C3}',
-  learning: '\u{1F4D6}',
-  mindfulness: '\u{1F9D8}',
-  work: '\u{1F4BB}',
-  social: '\u{1F91D}',
-  finance: '\u{1F4B0}',
-  other: '\u{1F4CB}',
+const PRIORITY_COLORS: Record<number, string> = {
+  0: 'transparent',
+  1: '#FFD60A',
+  2: '#FF9F0A',
+  3: '#FF5C5C',
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
+const CATEGORY_DOT_COLORS: Record<string, string> = {
   health: '#FF5C5C',
   fitness: '#FF9F0A',
   learning: '#FFD60A',
@@ -42,32 +35,16 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: '#8E8E93',
 };
 
-function getHabitEmoji(habit: Habit): string {
-  return CATEGORY_EMOJI[habit.category?.toLowerCase()] || CATEGORY_EMOJI.other;
+function getCategoryColor(category: string): string | null {
+  return CATEGORY_DOT_COLORS[category.toLowerCase()] ?? null;
 }
 
-function getHabitColor(habit: Habit): string {
-  return CATEGORY_COLORS[habit.category?.toLowerCase()] || CATEGORY_COLORS.other;
-}
-
-export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, onClick, showToggle, onDelete, weeklyProgress }: HabitCardProps) {
-  const emoji = getHabitEmoji(habit);
-  const color = getHabitColor(habit);
-  const scheduleText = getWeeklyScheduleDescription(habit);
+export const TodoCard = memo(function TodoCard({ todo, onToggle, onClick, onDelete }: TodoCardProps) {
   const [x, setX] = useState(0);
   const [swiping, setSwiping] = useState(false);
-  const [localCompleted, setLocalCompleted] = useState<boolean | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const swiped = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>();
-
-  const isCompleted = localCompleted ?? completed;
-
-  useEffect(() => {
-    if (completed !== undefined) {
-      setLocalCompleted(null);
-    }
-  }, [completed]);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -99,12 +76,6 @@ export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, o
     };
   }, [onClick]);
 
-  const handleToggle = useCallback(() => {
-    const next = !isCompleted;
-    setLocalCompleted(next);
-    onToggle?.();
-  }, [isCompleted, onToggle]);
-
   const bind = useDrag(
     ({ movement: [mx], active, direction: [dx], cancel }) => {
       if (active) {
@@ -112,8 +83,6 @@ export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, o
         setSwiping(true);
         if (mx > 0) {
           setX(Math.min(mx, SWIPE_THRESHOLD));
-        } else if (onDelete) {
-          setX(Math.max(mx, -SWIPE_THRESHOLD));
         } else {
           setX(0);
         }
@@ -123,12 +92,7 @@ export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, o
       setSwiping(false);
       setX(0);
 
-      if (dx > 0 && mx > SWIPE_THRESHOLD && onClick) {
-        onClick();
-        cancel?.();
-        return;
-      }
-      if (dx < 0 && mx < -SWIPE_THRESHOLD && onDelete) {
+      if (dx > 0 && mx > SWIPE_THRESHOLD && onDelete) {
         onDelete();
         cancel?.();
         return;
@@ -140,19 +104,18 @@ export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, o
   const handleClick = useCallback(() => {
     clearTimeout(longPressTimer.current);
     if (swiped.current) return;
-    if (showToggle) {
-      handleToggle();
-    } else {
-      onClick?.();
-    }
-  }, [showToggle, handleToggle, onClick]);
+    onClick?.();
+  }, [onClick]);
+
+  const priorityColor = PRIORITY_COLORS[todo.priority] ?? PRIORITY_COLORS[0];
+  const categoryColor = todo.category ? getCategoryColor(todo.category) : null;
 
   return (
     <div className="relative rounded-2xl overflow-hidden border border-surface-border">
       <motion.div
         layout
         animate={{
-          opacity: isCompleted ? 0.55 : 1,
+          opacity: todo.completed ? 0.55 : 1,
         }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
       >
@@ -167,40 +130,43 @@ export const HabitCard = memo(function HabitCard({ habit, completed, onToggle, o
           onClick={handleClick}
           onContextMenu={(e) => { e.preventDefault(); onClick?.(); }}
         >
-        <span className="text-lg shrink-0 pointer-events-none">{emoji}</span>
-        <div className="flex-1 min-w-0 pointer-events-none">
-          <span className={`block text-base font-medium leading-tight text-text-primary transition-all duration-200 ${isCompleted ? 'line-through opacity-60' : ''}`}>
-            {habit.name}
-          </span>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            {scheduleText && (
-              <>
-                <span
-                  className="w-[5px] h-[5px] rounded-full shrink-0"
-                  style={{ backgroundColor: color }}
-                />
-                <span className={`text-[13px] text-tertiary font-normal ${isCompleted ? 'opacity-40' : ''}`}>
-                  {scheduleText}
-                  {weeklyProgress && weeklyProgress.target > 0 && showToggle
-                    ? ` \u00B7 ${weeklyProgress.completed}/${weeklyProgress.target} this week`
-                    : ''}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-        {showToggle && (
           <div onClick={(e) => e.stopPropagation()}>
             <CompletionCheck
-              done={isCompleted}
+              done={todo.completed}
               onToggle={() => {
                 clearTimeout(longPressTimer.current);
                 swiped.current = false;
-                handleToggle();
+                onToggle?.();
               }}
             />
           </div>
-        )}
+          <div className="flex-1 min-w-0 pointer-events-none">
+            <span
+              className={`block text-base font-medium leading-tight text-text-primary transition-all duration-200 ${
+                todo.completed ? 'line-through opacity-60' : ''
+              }`}
+            >
+              {todo.title}
+            </span>
+            {(todo.notes || todo.category || todo.priority > 0) && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {todo.priority > 0 && (
+                  <Flag size={11} style={{ color: priorityColor }} className="shrink-0" />
+                )}
+                {categoryColor && (
+                  <span
+                    className="w-[5px] h-[5px] rounded-full shrink-0"
+                    style={{ backgroundColor: categoryColor }}
+                  />
+                )}
+                {todo.notes && (
+                  <span className="text-[13px] text-tertiary font-normal truncate max-w-[200px]">
+                    {todo.notes}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

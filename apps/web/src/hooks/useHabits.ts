@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useUserId } from '@/hooks/useAuth';
@@ -89,6 +90,60 @@ export function useDeleteHabit() {
       queryClient.invalidateQueries({ queryKey: ['completions'] });
     },
   });
+}
+
+export function useUndoDeleteHabit() {
+  const queryClient = useQueryClient();
+  const userId = useUserId();
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const performRealDelete = useCallback(async (id: string) => {
+    if (!userId) return;
+    const { error } = await supabase
+      .from('habit_completions')
+      .delete()
+      .eq('habit_id', id);
+    if (error) return;
+    await supabase
+      .from('habits')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', userId);
+    queryClient.invalidateQueries({ queryKey: ['habits'] });
+    queryClient.invalidateQueries({ queryKey: ['completions'] });
+  }, [userId, queryClient]);
+
+  const deleteHabit = useCallback((habit: Habit) => {
+    const key = habit.id;
+
+    queryClient.setQueryData<Habit[]>(['habits', userId], (old) =>
+      old ? old.filter((h) => h.id !== key) : []
+    );
+
+    const timer = setTimeout(() => {
+      timersRef.current.delete(key);
+      performRealDelete(key);
+    }, 5000);
+
+    timersRef.current.set(key, timer);
+  }, [queryClient, userId, performRealDelete]);
+
+  const undoDelete = useCallback((habit: Habit) => {
+    const key = habit.id;
+    const timer = timersRef.current.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(key);
+    }
+
+    queryClient.setQueryData<Habit[]>(['habits', userId], (old) => {
+      if (!old) return [habit];
+      if (old.some((h) => h.id === key)) return old;
+      return [...old, habit].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    });
+  }, [queryClient, userId]);
+
+  return { deleteHabit, undoDelete };
 }
 
 export function useArchiveHabit() {

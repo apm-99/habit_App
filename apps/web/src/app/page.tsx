@@ -7,7 +7,8 @@ import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
 import { DateHeader } from '@/components/DateHeader';
 import { StreakChart } from '@/components/StreakChart';
-import { useHabits, useCompletions, useToggleCompletion, useCreateHabit, useUpdateHabit, useDeleteHabit, useWeekCompletions } from '@/hooks/useHabits';
+import { UndoToast } from '@/components/UndoToast';
+import { useHabits, useCompletions, useToggleCompletion, useCreateHabit, useUpdateHabit, useUndoDeleteHabit, useWeekCompletions } from '@/hooks/useHabits';
 import { Plus, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { isScheduledToday } from '@/lib/schedule';
@@ -15,11 +16,31 @@ import type { CreateHabitInput, Habit } from '@repo/db';
 import Link from 'next/link';
 import { format, addDays, subDays, isToday, getDayOfYear, getDaysInYear } from 'date-fns';
 
+function YearProgress() {
+  const now = new Date();
+  const dayOfYear = getDayOfYear(now);
+  const daysInYear = getDaysInYear(now);
+  const pct = (dayOfYear / daysInYear) * 100;
+  return (
+    <div className="mt-10">
+      <p className="text-[13px] font-[500] text-text-secondary tracking-[-0.01em] mb-3">Year Progress</p>
+      <div className="flex items-baseline gap-1.5 mb-2.5">
+        <span className="text-[28px] font-[350] text-text-primary tracking-[-0.02em]">{pct.toFixed(1)}%</span>
+        <span className="text-[13px] text-muted">{dayOfYear} / {daysInYear} days</span>
+      </div>
+      <div className="h-[4px] rounded-full bg-border overflow-hidden">
+        <div className="h-full rounded-full bg-accent/70 transition-all duration-500 ease-smooth" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
 export default function TodayPage() {
   const [mounted, setMounted] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [showForm, setShowForm] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | undefined>(undefined);
+  const [deletedHabit, setDeletedHabit] = useState<Habit | undefined>(undefined);
 
   useEffect(() => {
     setMounted(true);
@@ -34,7 +55,7 @@ export default function TodayPage() {
   const toggleCompletion = useToggleCompletion();
   const createHabit = useCreateHabit();
   const updateHabit = useUpdateHabit();
-  const deleteHabit = useDeleteHabit();
+  const { deleteHabit, undoDelete } = useUndoDeleteHabit();
   const { userEmail, isAnonymous } = useAuth();
 
   const completedIds = useMemo(
@@ -46,7 +67,7 @@ export default function TodayPage() {
     toggleCompletion.mutate({ habitId, date: dateStr });
   }, [dateStr, toggleCompletion]);
 
-  const handleFormSubmit = async (input: CreateHabitInput) => {
+  const handleFormSubmit = useCallback(async (input: CreateHabitInput) => {
     if (editingHabit) {
       await updateHabit.mutateAsync({ id: editingHabit.id, ...input });
     } else {
@@ -54,16 +75,24 @@ export default function TodayPage() {
     }
     setShowForm(false);
     setEditingHabit(undefined);
-  };
+  }, [editingHabit, createHabit, updateHabit]);
 
   const handleEdit = useCallback((habit: Habit) => {
     setEditingHabit(habit);
     setShowForm(true);
   }, []);
 
-  const handleDelete = useCallback((id: string) => {
-    deleteHabit.mutate(id);
+  const handleDelete = useCallback((habit: Habit) => {
+    setDeletedHabit(habit);
+    deleteHabit(habit);
   }, [deleteHabit]);
+
+  const handleUndoDelete = useCallback(() => {
+    if (deletedHabit) {
+      undoDelete(deletedHabit);
+      setDeletedHabit(undefined);
+    }
+  }, [deletedHabit, undoDelete]);
 
   const todayHabits = useMemo(() => {
     if (!habits) return [];
@@ -109,25 +138,6 @@ export default function TodayPage() {
   const goToToday = useCallback(() => setSelectedDate(new Date()), []);
 
   const dayLabel = mounted ? format(selectedDate, isCurrentDay ? 'EEEE, MMMM d' : 'MMM d, yyyy') : '';
-
-  function YearProgress() {
-    const now = new Date();
-    const dayOfYear = getDayOfYear(now);
-    const daysInYear = getDaysInYear(now);
-    const pct = (dayOfYear / daysInYear) * 100;
-    return (
-      <div className="mt-10">
-        <p className="text-[13px] font-[500] text-text-secondary tracking-[-0.01em] mb-3">Year Progress</p>
-        <div className="flex items-baseline gap-1.5 mb-2.5">
-          <span className="text-[28px] font-[350] text-text-primary tracking-[-0.02em]">{pct.toFixed(1)}%</span>
-          <span className="text-[13px] text-muted">{dayOfYear} / {daysInYear} days</span>
-        </div>
-          <div className="h-[4px] rounded-full bg-border overflow-hidden">
-            <div className="h-full rounded-full bg-accent/70 transition-all duration-500 ease-smooth" style={{ width: `${pct}%` }} />
-          </div>
-      </div>
-    );
-  }
 
   return (
     <AppShell>
@@ -225,7 +235,7 @@ export default function TodayPage() {
                     completed={completedIds.has(habit.id)}
                     onToggle={() => handleToggle(habit.id)}
                     onClick={() => handleEdit(habit)}
-                    onDelete={() => handleDelete(habit.id)}
+                    onDelete={() => handleDelete(habit)}
                     weeklyProgress={weeklyProgressMap.get(habit.id)}
                   />
                 </motion.div>
@@ -254,6 +264,14 @@ export default function TodayPage() {
         saving={createHabit.isPending || updateHabit.isPending}
         error={createHabit.error ? (createHabit.error as Error).message : updateHabit.error ? (updateHabit.error as Error).message : null}
       />
+
+      {deletedHabit && (
+        <UndoToast
+          message={`"${deletedHabit.name}" deleted`}
+          onUndo={handleUndoDelete}
+          onDismiss={() => setDeletedHabit(undefined)}
+        />
+      )}
     </AppShell>
   );
 }

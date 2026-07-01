@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CalendarCheck, BarChart3, Settings } from 'lucide-react';
+import { CalendarCheck, ListTodo, BarChart3, Settings } from 'lucide-react';
 
 const tabs = [
   { href: '/', label: 'Today', Icon: CalendarCheck },
+  { href: '/todos', label: 'Todos', Icon: ListTodo },
   { href: '/stats', label: 'Statistics', Icon: BarChart3 },
   { href: '/settings', label: 'Settings', Icon: Settings },
 ];

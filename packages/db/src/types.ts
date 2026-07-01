@@ -1,5 +1,37 @@
 export type FrequencyType = 'daily' | 'weekly' | 'custom_days';
 
+export type TodoPriority = 0 | 1 | 2 | 3;
+
+export interface Todo {
+  id: string;
+  title: string;
+  notes: string;
+  due_date: string | null;
+  priority: TodoPriority;
+  category: string;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+}
+
+export interface CreateTodoInput {
+  title: string;
+  notes?: string;
+  due_date?: string | null;
+  priority?: TodoPriority;
+  category?: string;
+}
+
+export interface UpdateTodoInput {
+  title?: string;
+  notes?: string;
+  due_date?: string | null;
+  priority?: TodoPriority;
+  category?: string;
+  completed?: boolean;
+}
+
 export interface Habit {
   id: string;
   name: string;
