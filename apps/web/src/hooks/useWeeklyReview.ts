@@ -135,14 +135,6 @@ export function useWeeklyReview() {
   ]);
 
   const openReview = useCallback(() => {
-    const existing = getLatestWeeklyReview();
-
-    if (existing) {
-      setCurrentReview(existing);
-      setShowModal(true);
-      return;
-    }
-
     if (!lastWeekFetched) return;
 
     setGenerating(true);

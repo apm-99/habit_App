@@ -23,9 +23,6 @@ function useAllCompletions() {
         .eq('user_id', userId)
         .order('completed_at', { ascending: false });
       if (error) throw error;
-      if (typeof window !== 'undefined') {
-        console.debug('[useAllCompletions] count:', data?.length ?? 0);
-      }
       return data ?? [];
     },
     staleTime: 1000 * 60 * 5,
@@ -69,14 +66,29 @@ export function useMonthlyData(year: number, month: number) {
 }
 
 export function useYearlyData(year: number) {
+  const userId = useUserId();
   const { data: habits } = useHabits();
-  const { data: completions } = useAllCompletions();
+
+  const { data: completions } = useQuery({
+    queryKey: ['completions', 'yearly', userId, year],
+    enabled: !!userId,
+    queryFn: async (): Promise<HabitCompletion[]> => {
+      const yearStart = startOfYear(new Date(year, 0));
+      const yearEnd = endOfYear(yearStart);
+      const { data, error } = await supabase
+        .from('habit_completions')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('completed_at', yearStart.toISOString())
+        .lte('completed_at', yearEnd.toISOString());
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
 
   return useMemo(() => {
     if (!habits || !completions) return null;
-    if (typeof window !== 'undefined') {
-      console.debug('[useYearlyData] habits:', habits.length, 'completions:', completions.length);
-    }
     const yearStart = startOfYear(new Date(year, 0));
     const yearEnd = endOfYear(yearStart);
     const days: { date: Date; completed: number; total: number }[] = [];
