@@ -13,7 +13,7 @@ import {
   hasWeeklyReviewBeenShownToday,
   markWeeklyReviewShown,
 } from '@/lib/weekly-review-storage';
-import type { WeeklyReview, Habit, HabitCompletion } from '@repo/db';
+import type { WeeklyReview, HabitCompletion } from '@repo/db';
 
 function useWeeklyCompletions(weekStart: Date) {
   const userId = useUserId();
@@ -49,34 +49,25 @@ export function useWeeklyReview() {
 
   const thisWeekStart = useMemo(() => startOfWeek(now, { weekStartsOn: 1 }), [now]);
   const lastWeekStart = useMemo(() => subWeeks(thisWeekStart, 1), [thisWeekStart]);
+  const twoWeeksAgoStart = useMemo(() => subWeeks(thisWeekStart, 2), [thisWeekStart]);
 
   const { data: lastWeekCompletions } = useWeeklyCompletions(lastWeekStart);
-  const { data: thisWeekCompletions } = useWeeklyCompletions(thisWeekStart);
+  const { data: twoWeeksAgoCompletions } = useWeeklyCompletions(twoWeeksAgoStart);
 
-  const lastWeekCompletionsForReview = useMemo(() => {
-    if (!lastWeekCompletions) return [];
-    return lastWeekCompletions;
-  }, [lastWeekCompletions]);
-
-  const thisWeekCompletionsForReview = useMemo(() => {
-    if (!thisWeekCompletions) return [];
-    return thisWeekCompletions;
-  }, [thisWeekCompletions]);
-
-  const thisWeekCompletionsByDate = useMemo(() => {
-    if (!thisWeekCompletions) return {} as Record<string, string[]>;
+  const lastWeekCompletionsByDate = useMemo(() => {
+    if (!lastWeekCompletions) return {} as Record<string, string[]>;
     const byDate: Record<string, string[]> = {};
     for (let i = 0; i < 7; i++) {
-      const day = addDays(thisWeekStart, i);
+      const day = addDays(lastWeekStart, i);
       byDate[format(day, 'yyyy-MM-dd')] = [];
     }
-    for (const c of thisWeekCompletions) {
+    for (const c of lastWeekCompletions) {
       const day = format(new Date(c.completed_at), 'yyyy-MM-dd');
       if (!byDate[day]) byDate[day] = [];
       byDate[day].push(c.habit_id);
     }
     return byDate;
-  }, [thisWeekCompletions, thisWeekStart]);
+  }, [lastWeekCompletions, lastWeekStart]);
 
   // Load existing review from storage
   useEffect(() => {
@@ -86,22 +77,32 @@ export function useWeeklyReview() {
     }
   }, []);
 
-  // Auto-generate and show on Monday
-  useEffect(() => {
-    if (!isMonday || !userId || !habits || habits.length === 0) return;
-    if (hasWeeklyReviewBeenShownToday()) return;
-    if (!lastWeekCompletions || !thisWeekCompletions) return;
+  const generateReview = useCallback(() => {
+    if (!userId || !habits || habits.length === 0) return null;
+    if (!lastWeekCompletions) return null;
 
     const review = calculateWeeklyReview({
       habits,
-      completions: thisWeekCompletionsForReview,
-      previousCompletions: lastWeekCompletionsForReview,
-      weekStart: thisWeekStart,
-      previousWeekStart: lastWeekStart,
+      completions: lastWeekCompletions,
+      previousCompletions: twoWeeksAgoCompletions ?? [],
+      weekStart: lastWeekStart,
+      previousWeekStart: twoWeeksAgoStart,
       userId,
     });
 
     saveWeeklyReview(review);
+    return review;
+  }, [userId, habits, lastWeekCompletions, twoWeeksAgoCompletions, lastWeekStart, twoWeeksAgoStart]);
+
+  // Auto-generate and show on Monday
+  useEffect(() => {
+    if (!isMonday || !userId || !habits || habits.length === 0) return;
+    if (hasWeeklyReviewBeenShownToday()) return;
+    if (!lastWeekCompletions) return;
+
+    const review = generateReview();
+    if (!review) return;
+
     setCurrentReview(review);
     setShowModal(true);
     markWeeklyReviewShown();
@@ -110,20 +111,23 @@ export function useWeeklyReview() {
     userId,
     habits,
     lastWeekCompletions,
-    thisWeekCompletions,
-    thisWeekCompletionsForReview,
-    lastWeekCompletionsForReview,
-    thisWeekStart,
-    lastWeekStart,
+    generateReview,
   ]);
 
   const openReview = useCallback(() => {
     const existing = getLatestWeeklyReview();
+
     if (existing) {
       setCurrentReview(existing);
       setShowModal(true);
+    } else if (lastWeekCompletions) {
+      const review = generateReview();
+      if (review) {
+        setCurrentReview(review);
+        setShowModal(true);
+      }
     }
-  }, []);
+  }, [generateReview, lastWeekCompletions]);
 
   const closeReview = useCallback(() => {
     setShowModal(false);
@@ -138,6 +142,6 @@ export function useWeeklyReview() {
     openReview,
     closeReview,
     habits: habits ?? [],
-    weekCompletions: thisWeekCompletionsByDate,
+    weekCompletions: lastWeekCompletionsByDate,
   };
 }

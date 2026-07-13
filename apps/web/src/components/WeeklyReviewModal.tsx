@@ -149,7 +149,7 @@ export function WeeklyReviewModal({ review, habits, weekCompletions, open, onClo
           />
           {showConfetti && <Confetti />}
           <motion.div
-            className="fixed inset-0 z-[101] flex flex-col overflow-hidden"
+            className="fixed inset-0 bg-background z-[101] flex flex-col overflow-hidden"
             variants={modalVariants}
             initial="hidden"
             animate="visible"
