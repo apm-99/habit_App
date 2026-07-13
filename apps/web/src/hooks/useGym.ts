@@ -319,7 +319,16 @@ export function useSplitDayExercises(dayId: string | null) {
         .eq('day_id', dayId!)
         .order('display_order', { ascending: true });
       if (error) throw error;
-      return (data ?? []) as (SplitDayExercise & { exercise: Exercise })[];
+      // Deduplicate: keep first occurrence per exercise_id (guards against pre-fix DB duplicates)
+      const seen = new Set<string>();
+      const deduped: (SplitDayExercise & { exercise: Exercise })[] = [];
+      for (const row of (data ?? []) as (SplitDayExercise & { exercise: Exercise })[]) {
+        if (!seen.has(row.exercise_id)) {
+          seen.add(row.exercise_id);
+          deduped.push(row);
+        }
+      }
+      return deduped;
     },
   });
 }
@@ -456,6 +465,41 @@ export function useStartWorkout() {
           .from('workout_session_exercises')
           .insert(sessionExercises);
         if (insertErr) throw insertErr;
+
+        const setRows: {
+          session_id: string;
+          exercise_id: string;
+          set_number: number;
+          weight: number;
+          reps: number;
+          is_warmup: boolean;
+          is_failure: boolean;
+          rpe: null;
+          rest_seconds: null;
+          notes: string;
+        }[] = [];
+        for (const de of dayExercises) {
+          for (let s = 1; s <= de.target_sets; s++) {
+            setRows.push({
+              session_id: session.id,
+              exercise_id: de.exercise_id,
+              set_number: s,
+              weight: 0,
+              reps: 0,
+              is_warmup: false,
+              is_failure: false,
+              rpe: null,
+              rest_seconds: null,
+              notes: '',
+            });
+          }
+        }
+        if (setRows.length > 0) {
+          const { error: setsErr } = await supabase
+            .from('workout_sets')
+            .insert(setRows);
+          if (setsErr) throw setsErr;
+        }
       }
 
       return session as WorkoutSession;

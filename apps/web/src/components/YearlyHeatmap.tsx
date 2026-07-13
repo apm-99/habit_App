@@ -9,9 +9,9 @@ function getHeatmapColor(completed: number, total: number): string {
   if (total === 0 || completed === 0) return 'bg-surface-elevated/40';
   const ratio = completed / total;
   if (ratio === 1) return 'bg-success';
-  if (ratio >= 0.66) return 'bg-success/60';
-  if (ratio >= 0.33) return 'bg-accent/40';
-  return 'bg-accent/20';
+  if (ratio >= 0.66) return 'bg-success/65';
+  if (ratio >= 0.33) return 'bg-accent/65';
+  return 'bg-accent/35';
 }
 
 export function YearlyHeatmap() {
@@ -79,9 +79,9 @@ export function YearlyHeatmap() {
       <div className="flex items-center justify-end gap-[3px] mt-2">
         <span className="text-[9px] text-tertiary">Less</span>
         <div className="w-[10px] h-[10px] rounded-[2px] bg-surface-elevated/40" />
-        <div className="w-[10px] h-[10px] rounded-[2px] bg-accent/20" />
-        <div className="w-[10px] h-[10px] rounded-[2px] bg-accent/40" />
-        <div className="w-[10px] h-[10px] rounded-[2px] bg-success/60" />
+        <div className="w-[10px] h-[10px] rounded-[2px] bg-accent/35" />
+        <div className="w-[10px] h-[10px] rounded-[2px] bg-accent/65" />
+        <div className="w-[10px] h-[10px] rounded-[2px] bg-success/65" />
         <div className="w-[10px] h-[10px] rounded-[2px] bg-success" />
         <span className="text-[9px] text-tertiary">More</span>
       </div>
