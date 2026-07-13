@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { startOfWeek, addDays, subWeeks, format, getDay } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { useUserId } from '@/hooks/useAuth';
+import { useUserId, useAuthError } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { calculateWeeklyReview } from '@/lib/weekly-review';
 import {
@@ -40,9 +40,11 @@ function useWeeklyCompletions(weekStart: Date) {
 export function useWeeklyReview() {
   const [showModal, setShowModal] = useState(false);
   const [currentReview, setCurrentReview] = useState<WeeklyReview | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   const userId = useUserId();
-  const { data: habits } = useHabits();
+  const authError = useAuthError();
+  const { data: habits, isLoading: habitsLoading } = useHabits();
 
   const now = useMemo(() => new Date(), []);
   const isMonday = getDay(now) === 1;
@@ -51,8 +53,15 @@ export function useWeeklyReview() {
   const lastWeekStart = useMemo(() => subWeeks(thisWeekStart, 1), [thisWeekStart]);
   const twoWeeksAgoStart = useMemo(() => subWeeks(thisWeekStart, 2), [thisWeekStart]);
 
-  const { data: lastWeekCompletions } = useWeeklyCompletions(lastWeekStart);
-  const { data: twoWeeksAgoCompletions } = useWeeklyCompletions(twoWeeksAgoStart);
+  const {
+    data: lastWeekCompletions,
+    isFetched: lastWeekFetched,
+  } = useWeeklyCompletions(lastWeekStart);
+
+  const {
+    data: twoWeeksAgoCompletions,
+    isFetched: twoWeeksAgoFetched,
+  } = useWeeklyCompletions(twoWeeksAgoStart);
 
   const lastWeekCompletionsByDate = useMemo(() => {
     if (!lastWeekCompletions) return {} as Record<string, string[]>;
@@ -79,6 +88,7 @@ export function useWeeklyReview() {
 
   const generateReview = useCallback(() => {
     if (!userId || !habits || habits.length === 0) return null;
+    if (!lastWeekFetched || !twoWeeksAgoFetched) return null;
     if (!lastWeekCompletions) return null;
 
     const review = calculateWeeklyReview({
@@ -92,26 +102,30 @@ export function useWeeklyReview() {
 
     saveWeeklyReview(review);
     return review;
-  }, [userId, habits, lastWeekCompletions, twoWeeksAgoCompletions, lastWeekStart, twoWeeksAgoStart]);
+  }, [
+    userId, habits, lastWeekCompletions, twoWeeksAgoCompletions,
+    lastWeekFetched, twoWeeksAgoFetched,
+    lastWeekStart, twoWeeksAgoStart,
+  ]);
 
   // Auto-generate and show on Monday
   useEffect(() => {
     if (!isMonday || !userId || !habits || habits.length === 0) return;
     if (hasWeeklyReviewBeenShownToday()) return;
-    if (!lastWeekCompletions) return;
+    if (!lastWeekFetched) return;
+    if (generating) return;
 
+    setGenerating(true);
     const review = generateReview();
+    setGenerating(false);
+
     if (!review) return;
 
     setCurrentReview(review);
     setShowModal(true);
     markWeeklyReviewShown();
   }, [
-    isMonday,
-    userId,
-    habits,
-    lastWeekCompletions,
-    generateReview,
+    isMonday, userId, habits, lastWeekFetched, generating, generateReview,
   ]);
 
   const openReview = useCallback(() => {
@@ -120,20 +134,26 @@ export function useWeeklyReview() {
     if (existing) {
       setCurrentReview(existing);
       setShowModal(true);
-    } else if (lastWeekCompletions) {
-      const review = generateReview();
-      if (review) {
-        setCurrentReview(review);
-        setShowModal(true);
-      }
+      return;
     }
-  }, [generateReview, lastWeekCompletions]);
+
+    if (!lastWeekFetched) return;
+
+    setGenerating(true);
+    const review = generateReview();
+    setGenerating(false);
+
+    if (review) {
+      setCurrentReview(review);
+      setShowModal(true);
+    }
+  }, [generateReview, lastWeekFetched]);
 
   const closeReview = useCallback(() => {
     setShowModal(false);
   }, []);
 
-  const hasStoredReview = currentReview !== null;
+  const hasStoredReview = currentReview !== null && !authError;
 
   return {
     showModal,
@@ -143,5 +163,6 @@ export function useWeeklyReview() {
     closeReview,
     habits: habits ?? [],
     weekCompletions: lastWeekCompletionsByDate,
+    lastWeekFetched,
   };
 }

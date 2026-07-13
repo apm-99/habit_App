@@ -369,6 +369,7 @@ export function WeeklyReviewModal({ review, habits, weekCompletions, open, onClo
                           habits={habits}
                           completionsByDate={snapshotCompletions}
                           selectedDate={weekStart}
+                          size="compact"
                         />
                       </div>
                     </motion.div>

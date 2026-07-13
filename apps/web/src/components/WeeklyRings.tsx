@@ -9,11 +9,19 @@ interface WeeklyRingsProps {
   completionsByDate: Record<string, string[]>;
   selectedDate?: Date;
   onSelectDay?: (date: Date) => void;
+  size?: 'default' | 'compact';
 }
 
 const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectDay }: WeeklyRingsProps) {
+const SIZES = {
+  default: { ring: 42, svg: 36, r: 17, stroke: 2.5, fontSize: 12, gap: 18, labelSize: 11 },
+  compact: { ring: 30, svg: 26, r: 11, stroke: 2, fontSize: 9, gap: 10, labelSize: 9 },
+} as const;
+
+export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectDay, size = 'default' }: WeeklyRingsProps) {
+  const s = SIZES[size];
+
   const weekDays = useMemo(() => {
     const base = selectedDate || new Date();
     const monday = startOfWeek(base, { weekStartsOn: 1 });
@@ -38,9 +46,11 @@ export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectD
     return totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
   }, [habits, completionsByDate, weekDays]);
 
+  const circumference = 2 * Math.PI * s.r;
+
   return (
-    <div className="py-2 mb-6">
-      <div className="flex justify-center gap-[18px]">
+    <div className={size === 'compact' ? 'py-1 mb-2' : 'py-2 mb-6'}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: s.gap }}>
         {weekDays.map((day, i) => {
           const key = format(day, 'yyyy-MM-dd');
           const dayIsToday = isToday(day);
@@ -58,50 +68,61 @@ export function WeeklyRings({ habits, completionsByDate, selectedDate, onSelectD
             <button
               key={i}
               onClick={() => onSelectDay?.(day)}
-              className="flex flex-col items-center gap-[6px] animate-[ringFadeUp_0.3s_cubic-bezier(0.16,1,0.3,1)_both] bg-transparent border-none p-0 cursor-pointer active:opacity-60 transition-opacity"
-              style={{ animationDelay: `${i * 0.05}s` }}
+              className="flex flex-col items-center gap-[4px] bg-transparent border-none p-0 cursor-pointer active:opacity-60 transition-opacity"
             >
-              <div className="relative w-[42px] h-[42px] flex items-center justify-center">
+              <div
+                style={{ width: s.ring, height: s.ring }}
+                className="relative flex items-center justify-center"
+              >
                 {isSelected && (
-                  <div className="absolute inset-0 rounded-full bg-accent/15 border border-accent/40 pointer-events-none transition-all duration-200 ease-decelerate" />
+                  <div className="absolute inset-0 rounded-full bg-accent/15 border border-accent/40 pointer-events-none" />
                 )}
                 {dayIsToday && (
-                  <div className="absolute inset-0 rounded-full border-2 border-accent pointer-events-none transition-all duration-200 ease-decelerate" style={isSelected ? { borderColor: '#FF6B4A' } : undefined} />
+                  <div className="absolute inset-0 rounded-full border-2 border-accent pointer-events-none" style={isSelected ? { borderColor: '#FF6B4A' } : undefined} />
                 )}
                 {pct > 0 ? (
-                  <svg className="w-[36px] h-[36px]" viewBox="0 0 42 42">
-                    <circle cx="21" cy="21" r="17" fill="none" stroke="#38383A" strokeWidth="2.5" />
+                  <svg width={s.svg} height={s.svg} viewBox={`0 0 ${s.ring} ${s.ring}`}>
+                    <circle cx={s.ring / 2} cy={s.ring / 2} r={s.r} fill="none" stroke="#38383A" strokeWidth={s.stroke} />
                     <circle
-                      cx="21" cy="21" r="17" fill="none"                       stroke="#FF6B4A" strokeWidth="2.5"
+                      cx={s.ring / 2} cy={s.ring / 2} r={s.r} fill="none"
+                      stroke="#FF6B4A" strokeWidth={s.stroke}
                       strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 17}`}
-                      strokeDashoffset={`${2 * Math.PI * 17 * (1 - Math.min(pct, 1))}`}
-                      transform="rotate(-90 21 21)"
+                      strokeDasharray={`${circumference}`}
+                      strokeDashoffset={`${circumference * (1 - Math.min(pct, 1))}`}
+                      transform={`rotate(-90 ${s.ring / 2} ${s.ring / 2})`}
                       style={{ transition: 'stroke-dashoffset 0.4s var(--ease-smooth)' }}
                     />
-                    <text x="21" y="21" textAnchor="middle" dominantBaseline="central" fill="#FF6B4A" fontSize="12" fontWeight="600" fontFamily="-apple-system, system-ui, sans-serif">
+                    <text x={s.ring / 2} y={s.ring / 2} textAnchor="middle" dominantBaseline="central" fill="#FF6B4A" fontSize={s.fontSize} fontWeight="600" fontFamily="-apple-system, system-ui, sans-serif">
                       {Math.round(pct * 100)}
                     </text>
                   </svg>
                 ) : (
-                  <div className="w-[36px] h-[36px] rounded-full border-[1.5px] border-border flex items-center justify-center">
-                    <span className="text-muted text-[10px]">&bull;</span>
+                  <div
+                    style={{ width: s.svg, height: s.svg }}
+                    className="rounded-full border-[1.5px] border-border flex items-center justify-center"
+                  >
+                    <span className="text-muted text-[8px]">&bull;</span>
                   </div>
                 )}
               </div>
-              <span className={`text-[11px] text-center transition-colors duration-150 ${dayIsToday ? 'font-semibold text-accent' : isSelected ? 'font-medium text-text-secondary' : 'text-muted'}`}>
+              <span
+                style={{ fontSize: s.labelSize }}
+                className={`text-center transition-colors duration-150 ${dayIsToday ? 'font-semibold text-accent' : isSelected ? 'font-medium text-text-secondary' : 'text-muted'}`}
+              >
                 {dayLabels[i]}
               </span>
             </button>
           );
         })}
       </div>
+      {size === 'default' && (
         <div className="flex items-center justify-center gap-1.5 mt-[10px]">
           <div className="h-[3px] flex-1 max-w-[120px] rounded-full bg-border overflow-hidden">
             <div className="h-full rounded-full bg-accent transition-all duration-500 ease-smooth" style={{ width: `${weekPct}%` }} />
           </div>
           <span className="text-[11px] font-medium text-text-secondary">{weekPct}%</span>
         </div>
+      )}
     </div>
   );
 }

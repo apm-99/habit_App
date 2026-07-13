@@ -247,10 +247,11 @@ export default function TodayPage() {
           </Suspense>
         )}
 
-        {weeklyReview.hasStoredReview && !weeklyReview.showModal && isCurrentDay && (
+        {!weeklyReview.showModal && isCurrentDay && (
           <motion.button
             onClick={weeklyReview.openReview}
-            className="mt-6 w-full rounded-2xl bg-surface-card border border-surface-border p-4 flex items-center gap-3 active:opacity-60 transition-opacity"
+            disabled={!weeklyReview.lastWeekFetched}
+            className="mt-6 w-full rounded-2xl bg-surface-card border border-surface-border p-4 flex items-center gap-3 active:opacity-60 transition-opacity disabled:opacity-50"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -260,7 +261,9 @@ export default function TodayPage() {
             </div>
             <div className="flex-1 text-left">
               <p className="text-[15px] font-medium text-text-primary">Last Week Review</p>
-              <p className="text-[13px] text-text-secondary">See how your week went</p>
+              <p className="text-[13px] text-text-secondary">
+                {weeklyReview.lastWeekFetched ? 'See how your week went' : 'Loading your data...'}
+              </p>
             </div>
             <ChevronRight size={16} className="text-text-secondary" />
           </motion.button>
