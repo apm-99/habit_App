@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/Providers';
+import { AppShell } from '@/components/AppShell';
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' });
 
@@ -44,8 +45,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="format-detection" content="telephone=no" />
       </head>
-      <body className={`${inter.className} min-h-screen bg-background text-text-primary`}>
-        <Providers>{children}</Providers>
+      <body className={`${inter.className} min-h-dvh bg-background text-text-primary`}>
+        <Providers>
+          <AppShell>{children}</AppShell>
+        </Providers>
       </body>
     </html>
   );

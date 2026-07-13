@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
 import { UndoToast } from '@/components/UndoToast';
@@ -42,7 +41,7 @@ export default function HabitsPage() {
   }, [deletedHabit, undoDelete]);
 
   return (
-    <AppShell>
+    <>
       <div className="px-5 pt-14 pb-24">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-[36px] font-[500] tracking-[-0.02em] text-text-primary leading-tight">Habits</h1>
@@ -97,6 +96,6 @@ export default function HabitsPage() {
           onDismiss={() => setDeletedHabit(undefined)}
         />
       )}
-    </AppShell>
+    </>
   );
 }

@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { AppShell } from '@/components/AppShell';
 import { HabitCard } from '@/components/HabitCard';
 import { HabitForm } from '@/components/HabitForm';
 import { DateHeader } from '@/components/DateHeader';
 import { StreakChart } from '@/components/StreakChart';
 import { UndoToast } from '@/components/UndoToast';
 import { EmptyState } from '@/components/EmptyState';
+import { WeeklyReviewModal } from '@/components/WeeklyReviewModal';
 import { useHabits, useCompletions, useToggleCompletion, useCreateHabit, useUpdateHabit, useUndoDeleteHabit, useWeekCompletions } from '@/hooks/useHabits';
-import { Plus, ChevronLeft, ChevronRight, User, CalendarCheck } from 'lucide-react';
+import { useWeeklyReview } from '@/hooks/useWeeklyReview';
+import { Plus, ChevronLeft, ChevronRight, User, CalendarCheck, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { isScheduledToday } from '@/lib/schedule';
 import type { CreateHabitInput, Habit } from '@repo/db';
@@ -58,6 +59,7 @@ export default function TodayPage() {
   const updateHabit = useUpdateHabit();
   const { deleteHabit, undoDelete } = useUndoDeleteHabit();
   const { userEmail, isAnonymous } = useAuth();
+  const weeklyReview = useWeeklyReview();
 
   const completedIds = useMemo(
     () => new Set(completions?.map((c) => c.habit_id) ?? []),
@@ -141,7 +143,7 @@ export default function TodayPage() {
   const dayLabel = mounted ? format(selectedDate, isCurrentDay ? 'EEEE, MMMM d' : 'MMM d, yyyy') : '';
 
   return (
-    <AppShell>
+    <>
       <div className="px-5 pt-14 pb-24">
         <div className="flex items-center justify-between mb-0.5">
           <h1 className="text-[36px] font-[500] tracking-[-0.02em] text-text-primary leading-tight">
@@ -190,7 +192,9 @@ export default function TodayPage() {
           </div>
         </div>
 
-        <StreakChart />
+        <Suspense fallback={<div className="rounded-xl bg-surface-card border border-surface-border px-4 py-3.5 mb-5 h-[60px] animate-pulse" />}>
+          <StreakChart />
+        </Suspense>
 
         <DateHeader
           selectedDate={selectedDate}
@@ -237,7 +241,30 @@ export default function TodayPage() {
           </>
         )}
 
-        {mounted && <YearProgress />}
+        {mounted && (
+          <Suspense fallback={<div className="mt-10 h-[60px] animate-pulse" />}>
+            <YearProgress />
+          </Suspense>
+        )}
+
+        {weeklyReview.hasStoredReview && !weeklyReview.showModal && isCurrentDay && (
+          <motion.button
+            onClick={weeklyReview.openReview}
+            className="mt-6 w-full rounded-2xl bg-surface-card border border-surface-border p-4 flex items-center gap-3 active:opacity-60 transition-opacity"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+          >
+            <div className="w-[32px] h-[32px] rounded-full bg-accent/15 flex items-center justify-center">
+              <BarChart3 size={16} className="text-accent" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-[15px] font-medium text-text-primary">Last Week Review</p>
+              <p className="text-[13px] text-text-secondary">See how your week went</p>
+            </div>
+            <ChevronRight size={16} className="text-text-secondary" />
+          </motion.button>
+        )}
       </div>
 
       {isCurrentDay && (
@@ -265,6 +292,14 @@ export default function TodayPage() {
           onDismiss={() => setDeletedHabit(undefined)}
         />
       )}
-    </AppShell>
+
+      <WeeklyReviewModal
+        review={weeklyReview.currentReview!}
+        habits={weeklyReview.habits}
+        weekCompletions={weeklyReview.weekCompletions}
+        open={weeklyReview.showModal}
+        onClose={weeklyReview.closeReview}
+      />
+    </>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AppShell } from '@/components/AppShell';
 import { useAuth } from '@/hooks/useAuth';
 import { Moon, Sun, Info, LogIn, LogOut, Mail } from 'lucide-react';
 
@@ -35,7 +34,6 @@ export default function SettingsPage() {
   };
 
   return (
-    <AppShell>
       <div className="px-5 pt-14 pb-24">
         <h1 className="text-[36px] font-[500] tracking-[-0.02em] text-text-primary leading-tight">Settings</h1>
         <p className="text-[15px] text-text-secondary mt-0.5 mb-6">App preferences</p>
@@ -112,6 +110,5 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </AppShell>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AppShell } from '@/components/AppShell';
 import { TodoCard } from '@/components/TodoCard';
 import { TodoForm } from '@/components/TodoForm';
 import { UndoToast } from '@/components/UndoToast';
@@ -168,7 +167,7 @@ export default function TodosPage() {
   }, [deletedTodo, undoDelete]);
 
   return (
-    <AppShell>
+    <>
       <div className="px-5 pt-14 pb-24">
         <div className="flex items-center justify-between mb-0.5">
           <h1 className="text-[36px] font-[500] tracking-[-0.02em] text-text-primary leading-tight">
@@ -377,6 +376,6 @@ export default function TodosPage() {
           onDismiss={() => setDeletedTodo(undefined)}
         />
       )}
-    </AppShell>
+    </>
   );
 }
