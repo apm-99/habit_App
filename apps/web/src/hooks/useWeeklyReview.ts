@@ -10,6 +10,7 @@ import { calculateWeeklyReview } from '@/lib/weekly-review';
 import {
   getLatestWeeklyReview,
   saveWeeklyReview,
+  clearWeeklyReview,
   hasWeeklyReviewBeenShownToday,
   markWeeklyReviewShown,
 } from '@/lib/weekly-review-storage';
@@ -78,13 +79,18 @@ export function useWeeklyReview() {
     return byDate;
   }, [lastWeekCompletions, lastWeekStart]);
 
-  // Load existing review from storage
+  // Load existing review from storage (clear if stale — wrong week)
   useEffect(() => {
     const existing = getLatestWeeklyReview();
     if (existing) {
-      setCurrentReview(existing);
+      const expectedStart = format(lastWeekStart, 'yyyy-MM-dd');
+      if (existing.week_start !== expectedStart) {
+        clearWeeklyReview();
+      } else {
+        setCurrentReview(existing);
+      }
     }
-  }, []);
+  }, [lastWeekStart]);
 
   const generateReview = useCallback(() => {
     if (!userId || !habits || habits.length === 0) return null;
