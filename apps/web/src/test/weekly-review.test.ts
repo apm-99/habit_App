@@ -146,8 +146,8 @@ describe('calculateWeeklyReview', () => {
       userId: 'user-1',
     });
 
-    // Weekly habits scheduled every day = 7 scheduled
-    expect(review.total_scheduled).toBe(7);
+    // Weekly habits use target_count as scheduled per week
+    expect(review.total_scheduled).toBe(3);
     expect(review.total_completed).toBe(3);
   });
 

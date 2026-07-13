@@ -23,9 +23,12 @@ function useAllCompletions() {
         .eq('user_id', userId)
         .order('completed_at', { ascending: false });
       if (error) throw error;
+      if (typeof window !== 'undefined') {
+        console.debug('[useAllCompletions] count:', data?.length ?? 0);
+      }
       return data ?? [];
     },
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 60 * 5,
   });
 }
 
@@ -71,6 +74,9 @@ export function useYearlyData(year: number) {
 
   return useMemo(() => {
     if (!habits || !completions) return null;
+    if (typeof window !== 'undefined') {
+      console.debug('[useYearlyData] habits:', habits.length, 'completions:', completions.length);
+    }
     const yearStart = startOfYear(new Date(year, 0));
     const yearEnd = endOfYear(yearStart);
     const days: { date: Date; completed: number; total: number }[] = [];
