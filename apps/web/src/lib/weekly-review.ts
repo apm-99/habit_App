@@ -3,6 +3,10 @@ import type { Habit, HabitCompletion, HabitBreakdown, WeekComparison, WeeklyAchi
 import { getScheduledDaysInRange } from './schedule';
 
 function getScheduledOccurrences(habit: Habit, weekStart: Date, weekEnd: Date): number {
+  if (habit.frequency_type === 'weekly') {
+    const dayCount = differenceInCalendarDays(weekEnd, weekStart) + 1;
+    return Math.min(habit.target_count, dayCount);
+  }
   return getScheduledDaysInRange(habit, weekStart, weekEnd).length;
 }
 
