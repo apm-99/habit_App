@@ -8,6 +8,7 @@ function makeHabit(overrides: Partial<Habit> = {}): Habit {
     name: 'Test Habit',
     description: '',
     category: '',
+    emoji: '',
     frequency_type: 'daily',
     target_count: 1,
     custom_days: [],

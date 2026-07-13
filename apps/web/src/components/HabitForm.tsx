@@ -49,11 +49,6 @@ const CATEGORY_COLOR_MAP: Record<string, string> = {
   other: '#8E8E93',
 };
 
-function emojiToCategory(emoji: string): string {
-  const entry = Object.entries(CATEGORY_EMOJI_MAP).find(([, e]) => e === emoji);
-  return entry?.[0] || 'other';
-}
-
 const backdropVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
@@ -74,7 +69,7 @@ const sheetVariants = {
 export function HabitForm({ open, onClose, onSubmit, initial, error: submitError, saving }: HabitFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
-  const [selectedEmoji, setSelectedEmoji] = useState<string>(initial?.category ? CATEGORY_EMOJI_MAP[initial.category] || EMOJIS[0] : EMOJIS[0]);
+  const [selectedEmoji, setSelectedEmoji] = useState<string>(initial?.emoji || EMOJIS[0]);
   const [selectedColor, setSelectedColor] = useState<string>(initial?.category ? CATEGORY_COLOR_MAP[initial.category] || COLORS[0] : COLORS[0]);
   const [frequencyType, setFrequencyType] = useState(initial?.frequency_type ?? 'daily');
   const [targetCount, setTargetCount] = useState(initial?.target_count ?? 1);
@@ -87,7 +82,7 @@ export function HabitForm({ open, onClose, onSubmit, initial, error: submitError
     if (open) {
       setName(initial?.name ?? '');
       setDescription(initial?.description ?? '');
-      setSelectedEmoji(initial?.category ? CATEGORY_EMOJI_MAP[initial.category] || EMOJIS[0] : EMOJIS[0]);
+      setSelectedEmoji(initial?.emoji || EMOJIS[0]);
       setSelectedColor(initial?.category ? CATEGORY_COLOR_MAP[initial.category] || COLORS[0] : COLORS[0]);
       setFrequencyType(initial?.frequency_type ?? 'daily');
       setTargetCount(initial?.target_count ?? 1);
@@ -98,11 +93,11 @@ export function HabitForm({ open, onClose, onSubmit, initial, error: submitError
   }, [open, initial]);
 
   const handleSubmit = async () => {
-    const category = emojiToCategory(selectedEmoji);
     const input = {
       name,
       description,
-      category,
+      category: selectedColor,
+      emoji: selectedEmoji,
       frequency_type: frequencyType,
       target_count: frequencyType === 'custom_days' ? customDays.length : targetCount,
       custom_days: frequencyType === 'custom_days' ? customDays : [],

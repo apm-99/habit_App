@@ -37,6 +37,7 @@ export interface Habit {
   name: string;
   description: string;
   category: string;
+  emoji: string;
   frequency_type: FrequencyType;
   target_count: number;
   custom_days: number[];

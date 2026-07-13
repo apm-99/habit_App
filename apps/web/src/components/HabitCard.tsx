@@ -43,6 +43,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 function getHabitEmoji(habit: Habit): string {
+  if (habit.emoji) return habit.emoji;
   return CATEGORY_EMOJI[habit.category?.toLowerCase()] || CATEGORY_EMOJI.other;
 }
 
