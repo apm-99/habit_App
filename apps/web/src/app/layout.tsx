@@ -18,7 +18,16 @@ export const metadata: Metadata = {
   other: {
     'mobile-web-app-capable': 'yes',
   },
+   icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/icons/icon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/icons/icon-192x192.png',
+  }
 };
+
 
 export const viewport: Viewport = {
   width: 'device-width',
